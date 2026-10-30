@@ -26,23 +26,29 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   ]
 
   const navItems = role === 'coordinator' ? coordinatorNav : emergencyNav
+  const navigate = (id: string) => {
+    onTabChange(id)
+    const targetId = id === 'capacity' ? 'capacity' : id === 'eventlog' ? 'eventlog' : id === 'settings' ? 'settings-panel' : id
+    window.setTimeout(() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
+  }
 
   return (
     <aside className="sidebar">
       <div>
         {navItems.map(({ id, icon: Icon, label }) => (
-          <div
+          <button
+            type="button"
             key={id}
             className={`sidebar-nav-item${activeTab === id ? ' active' : ''}`}
-            onClick={() => onTabChange(id)}
+            onClick={() => navigate(id)}
           >
             <Icon size={16} />
             <span>{label}</span>
-          </div>
+          </button>
         ))}
       </div>
       <div style={{ padding: '0 20px', color: 'var(--text-secondary)', fontSize: 11 }}>
-        v0.1 · Demo
+        PULSEGRID · Demo mode
       </div>
     </aside>
   )

@@ -23,14 +23,14 @@ export function CoordinatorDashboard() {
 
   return <div className="grid-50-50">
     <div className="stack">
-      <section className="card">
+      <section id="dashboard" className="card">
         <p className="eyebrow">Hospital coordinator · simulated</p>
         <h1>Metro Care Centre</h1>
         <p className="muted-copy">Update fictional resource availability. Saving changes triggers a destination reassessment if a journey is active.</p>
         <div className="status-summary"><span className="badge badge-blue">ICU: {icuBeds} beds</span><span className={`badge ${specialistOn ? 'badge-green' : 'badge-red'}`}>Cardiac specialist: {specialistOn ? 'available' : 'unavailable'}</span></div>
       </section>
 
-      <section className="card">
+      <section id="capacity" className="card">
         <p className="eyebrow">Readiness controls</p>
         <div className="data-row"><span>ICU beds available</span><div className="counter-wrap">
           <button id="icu-minus" className="counter-btn" onClick={() => setIcuBeds((value) => Math.max(0, value - 1))}><Minus size={15} /></button>
@@ -51,12 +51,13 @@ export function CoordinatorDashboard() {
       {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Demo ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => resolveIncoming(true)}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => resolveIncoming(false)}>Reject — lack of resources</button></div></section>}
     </div>
 
-    <section className="card">
+    <section id="eventlog" className="card">
       <p className="eyebrow">Shared simulation audit log</p>
       {auditLog.length === 0 ? <p className="muted-copy">Start an Emergency User journey first, then return here to change ICU capacity.</p> : auditLog.map((event) => <div className="audit-item" key={event.id}>
         <span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div>
       </div>)}
     </section>
-    {toast && <div className="toast toast-success" role="status">{toast}</div>}
+    <section id="settings-panel" className="card coordinator-settings"><p className="eyebrow">Display settings</p><p className="muted-copy">Use the English/Hindi control in the navigation bar to change the interface language.</p></section>
+    {toast && <div className={`toast ${toast.startsWith('No worries') ? 'toast-danger' : 'toast-success'}`} role="status">{toast}</div>}
   </div>
 }

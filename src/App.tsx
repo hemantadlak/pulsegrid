@@ -16,7 +16,7 @@ function AppContent() {
 
   return (
     <>
-      <div className="sim-banner">Simulation only — no real emergency calls, ambulance tracking, patient data, or hospital availability are used.</div>
+      <div className="sim-banner">PULSEGRID <span>·</span> Demo mode</div>
 
       {/* Navbar */}
       <Navbar />
