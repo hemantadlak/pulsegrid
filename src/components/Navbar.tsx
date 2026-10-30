@@ -3,9 +3,10 @@ import { useState } from 'react'
 import { useApp } from '../context'
 import { Logo } from './Logo'
 import { t } from '../i18n'
+import { LiveClock } from './ui/LiveClock'
 
-export function Navbar() {
-  const { role, signOut, lang, setLang } = useApp()
+export function Navbar({ onRequestSignOut }: { onRequestSignOut: () => void }) {
+  const { role, lang, setLang } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   const roleLabel =
@@ -18,6 +19,7 @@ export function Navbar() {
   return (
     <nav className="navbar">
       <Logo size="md" />
+      <LiveClock />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
         {/* Language toggle */}
@@ -25,19 +27,21 @@ export function Navbar() {
           <button
             className={`lang-btn${lang === 'en' ? ' active' : ''}`}
             onClick={() => setLang('en')}
+            aria-label="Switch to English"
           >
             EN
           </button>
           <button
             className={`lang-btn${lang === 'hi' ? ' active' : ''}`}
             onClick={() => setLang('hi')}
+            aria-label="Switch to Hindi"
           >
             HI
           </button>
         </div>
 
         {role === 'coordinator' && <>
-          <button className="notification-bell" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Incoming simulated notifications"><Bell size={18} /><span>1</span></button>
+          <button className="notification-bell" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications — 1 unread"><Bell size={18} /><span>1</span></button>
           {notificationsOpen && <div className="notification-dropdown"><div className="notification-title">Incoming simulated patient <button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><strong>Cardiac care request</strong><small>AMB-DEMO-07 · simulated ETA 7 min</small><p>Review the Incoming simulated patient card in the coordinator dashboard.</p></div>}
         </>}
 
@@ -62,7 +66,7 @@ export function Navbar() {
         {role && (
           <button
             className="btn-outline"
-            onClick={() => void signOut()}
+            onClick={onRequestSignOut}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <LogOut size={14} />

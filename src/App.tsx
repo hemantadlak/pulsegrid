@@ -1,48 +1,47 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Helmet, HelmetProvider } from 'react-helmet-async'
+import { motion } from 'framer-motion'
+import { Toaster } from 'react-hot-toast'
 import { AppProvider, useApp } from './context'
-import { LoginScreen } from './components/LoginScreen'
 import { Navbar } from './components/Navbar'
 import { Sidebar } from './components/Sidebar'
-import { EmergencyDashboard } from './components/EmergencyDashboard'
-import { CoordinatorDashboard } from './components/CoordinatorDashboard'
+import { AppLoader } from './components/ui/AppLoader'
+import { ConfirmModal } from './components/ui/ConfirmModal'
+import { OfflineBanner } from './components/ui/OfflineBanner'
+import { GlobalSearch } from './components/layout/GlobalSearch'
+const LoginScreen = lazy(async () => ({ default: (await import('./components/LoginScreen')).LoginScreen }))
+const EmergencyDashboard = lazy(async () => ({ default: (await import('./components/EmergencyDashboard')).EmergencyDashboard }))
+const CoordinatorDashboard = lazy(async () => ({ default: (await import('./components/CoordinatorDashboard')).CoordinatorDashboard }))
+const NotFound = lazy(async () => ({ default: (await import('./pages/NotFound')).NotFound }))
 
 function AppContent() {
-  const { role, dispatch } = useApp()
+  const { role, dispatch, signOut } = useApp()
   const [activeTab, setActiveTab] = useState('dashboard')
-
-  if (!role) {
-    return <LoginScreen />
-  }
-
-  return (
-    <>
-      <div className="sim-banner">PULSEGRID <span>·</span> Demo mode</div>
-
-      {/* Navbar */}
-      <Navbar />
-
-      {/* Sidebar */}
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* Main content */}
-      <main className="main-layout">
-        {role === 'emergency' ? (
-          <EmergencyDashboard />
-        ) : (
-          <CoordinatorDashboard />
-        )}
-      </main>
-      {role === 'emergency' && <button className="sos-button" onClick={() => dispatch({ helper: true })} title="Start simulated SOS support">SOS</button>}
-    </>
-  )
+  const [signOutOpen, setSignOutOpen] = useState(false)
+  if (!role) return <Suspense fallback={<AppLoader />}><LoginScreen /></Suspense>
+  return <>
+    <Helmet><title>{role === 'emergency' ? 'Emergency dashboard — PULSEGRID' : 'Hospital coordinator — PULSEGRID'}</title><meta name="description" content="PULSEGRID is a fictional emergency dispatch decision-support simulation." /><meta name="theme-color" content="#2563EB" /><link rel="canonical" href="https://pulsegrid-theta.vercel.app" /></Helmet>
+    <div className="sim-banner">PULSEGRID <span>·</span> Demo mode</div>
+    <OfflineBanner />
+    <Navbar onRequestSignOut={() => setSignOutOpen(true)} />
+    <GlobalSearch />
+    <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+    <motion.main className="main-layout" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
+      <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard /> : <CoordinatorDashboard />}</Suspense>
+    </motion.main>
+    {role === 'emergency' && <button className="sos-button" aria-label="Emergency SOS — request immediate simulated help" onClick={() => dispatch({ helper: true })} title="Start simulated SOS support">SOS</button>}
+    {signOutOpen && <ConfirmModal variant="signout" onClose={() => setSignOutOpen(false)} onConfirm={() => { void signOut(); setSignOutOpen(false) }} />}
+  </>
 }
 
 function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  )
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { const timer = window.setTimeout(() => setLoading(false), 1200); return () => window.clearTimeout(timer) }, [])
+  return <HelmetProvider>
+    <Helmet><title>PULSEGRID — Emergency Dispatch Intelligence</title><meta name="description" content="Fictional emergency dispatch decision-support simulation." /><meta property="og:title" content="PULSEGRID" /><meta property="og:type" content="website" /></Helmet>
+    {loading ? <AppLoader /> : window.location.pathname !== '/' ? <Suspense fallback={<AppLoader />}><NotFound /></Suspense> : <AppProvider><AppContent /></AppProvider>}
+    <Toaster position="top-right" toastOptions={{ style: { background: '#FFFFFF', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 16px rgba(15,23,42,0.12)', fontSize: '14px', fontWeight: '500', padding: '14px 16px' } }} />
+  </HelmetProvider>
 }
 
 export default App

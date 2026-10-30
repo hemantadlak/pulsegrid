@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useApp } from '../context'
+import { ConfirmModal } from './ui/ConfirmModal'
 
 export function CoordinatorDashboard() {
   const { hospitals, auditLog, updateMetroStatus, recordHospitalDecision } = useApp()
@@ -12,15 +14,15 @@ export function CoordinatorDashboard() {
   const [ventilators, setVentilators] = useState(2)
   const [bloodBank, setBloodBank] = useState<'full' | 'low' | 'critical'>('full')
   const [incoming, setIncoming] = useState(true)
-  const [toast, setToast] = useState('')
+  const [pendingDecision, setPendingDecision] = useState<'accept' | 'reject' | null>(null)
   const [showFullHistory, setShowFullHistory] = useState(false)
 
   useEffect(() => { setIcuBeds(metro.icuBeds); setSpecialistOn(metro.cardiacSpecialist); setErStatus(metro.erStatus) }, [metro])
   const save = () => {
     updateMetroStatus({ icuBeds, cardiacSpecialist: specialistOn, erStatus })
-    setSaved(true); setToast('Simulated hospital status updated'); window.setTimeout(() => { setSaved(false); setToast('') }, 2600)
+    setSaved(true); window.setTimeout(() => setSaved(false), 2600)
   }
-  const resolveIncoming = (accepted: boolean) => { recordHospitalDecision(accepted, 'ICU capacity unavailable'); setIncoming(false); setToast(accepted ? 'Thank you! The patient is arriving in a few minutes. Please arrange all facilities.' : 'No worries — the patient has been rerouted.'); window.setTimeout(() => setToast(''), 4200) }
+  const resolveIncoming = (accepted: boolean) => { recordHospitalDecision(accepted, 'ICU capacity unavailable'); setIncoming(false); setPendingDecision(null); accepted ? toast.success('Thank you! The patient is arriving in a few minutes. Please arrange all facilities.') : toast.error('No worries — the patient has been rerouted.') }
 
   return <div className="grid-50-50">
     <div className="stack">
@@ -34,9 +36,9 @@ export function CoordinatorDashboard() {
       <section id="capacity" className="card">
         <p className="eyebrow">Readiness controls</p>
         <div className="data-row"><span>ICU beds available</span><div className="counter-wrap">
-          <button id="icu-minus" className="counter-btn" onClick={() => setIcuBeds((value) => Math.max(0, value - 1))}><Minus size={15} /></button>
+          <button id="icu-minus" className="counter-btn" aria-label="Decrease ICU bed count" onClick={() => setIcuBeds((value) => Math.max(0, value - 1))}><Minus size={15} /></button>
           <strong className="counter-value">{icuBeds}</strong>
-          <button id="icu-plus" className="counter-btn" onClick={() => setIcuBeds((value) => Math.min(8, value + 1))}><Plus size={15} /></button>
+          <button id="icu-plus" className="counter-btn" aria-label="Increase ICU bed count" onClick={() => setIcuBeds((value) => Math.min(8, value + 1))}><Plus size={15} /></button>
         </div></div>
         <div className="data-row"><span>Cardiac specialist available</span><label className="toggle-switch"><input type="checkbox" checked={specialistOn} onChange={(event) => setSpecialistOn(event.target.checked)} /><span className="toggle-slider" /></label></div>
         <div className="data-row"><span>Ventilators available</span><div className="counter-wrap"><button className="counter-btn" onClick={() => setVentilators((value) => Math.max(0, value - 1))}><Minus size={15} /></button><strong className="counter-value">{ventilators}</strong><button className="counter-btn" onClick={() => setVentilators((value) => Math.min(8, value + 1))}><Plus size={15} /></button></div></div>
@@ -49,7 +51,7 @@ export function CoordinatorDashboard() {
         <p className="eyebrow">Demo trigger</p>
         <p>For the key demo, set ICU beds to <strong>0</strong> and save while the Emergency User journey is active.</p>
       </section>
-      {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Demo ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => resolveIncoming(true)}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => resolveIncoming(false)}>Reject — lack of resources</button></div></section>}
+      {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Demo ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => setPendingDecision('accept')}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => setPendingDecision('reject')}>Reject — lack of resources</button></div></section>}
     </div>
 
     <section id="eventlog" className="card">
@@ -59,6 +61,6 @@ export function CoordinatorDashboard() {
       </div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}
     </section>
     <section id="settings-panel" className="card coordinator-settings"><p className="eyebrow">Display settings</p><p className="muted-copy">Use the English/Hindi control in the navigation bar to change the interface language.</p></section>
-    {toast && <div className={`toast ${toast.startsWith('No worries') ? 'toast-danger' : 'toast-success'}`} role="status">{toast}</div>}
+    {pendingDecision && <ConfirmModal variant={pendingDecision === 'accept' ? 'accept' : 'redirect'} onClose={() => setPendingDecision(null)} onConfirm={() => resolveIncoming(pendingDecision === 'accept')} />}
   </div>
 }

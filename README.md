@@ -1,6 +1,18 @@
 # PULSEGRID
 
 PULSEGRID is a simulation-only emergency dispatch decision-support prototype.
+It demonstrates capability-first hospital matching, a fictional ambulance route,
+role-based hospital controls, and an optional Supabase persistence layer.
+
+## Features
+
+- Emergency User and Hospital Coordinator demo roles
+- Twelve simulated emergency conditions with capability-first eligibility checks
+- Browser-session location permission, Leaflet route visualization, and ETA timer
+- SOS simulation with two fictional support helpers
+- Hospital capacity updates, accept/reject confirmation, rerouting, and audit history
+- Hindi/English controls, command search, loader, offline notice, and 404 page
+- Optional Supabase Auth, fictional data persistence, RLS, and Realtime subscriptions
 
 ## Demo flow
 
@@ -54,3 +66,6 @@ real blood/plasma inventory in this hackathon prototype.
    output directory `dist`.
 3. If using Supabase, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to
    Vercel Project Settings → Environment Variables, then redeploy.
+
+`vercel.json` includes the Vite build settings and SPA rewrite needed for the
+custom 404 experience.
