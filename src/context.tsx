@@ -10,6 +10,7 @@ export type Role = 'emergency' | 'coordinator' | null
 export type JourneyState = 'idle' | 'en-route' | 'reroute-required' | 'rerouted'
 export type AuditEvent = { id: number; text: string; time: string; tone: 'blue' | 'green' | 'amber' | 'red' }
 type AuthResult = { error: string | null; message?: string }
+type DispatchOptions = { helper?: boolean; conditionId?: string; source?: 'sos-voice' }
 type DatabaseHospital = { id: string; name: string; eta_minutes: number; icu_beds: number; cardiac_specialist: boolean; er_status: Hospital['erStatus']; lat: number; lng: number; facilities: string[] }
 
 interface AppContextType {
@@ -17,7 +18,7 @@ interface AppContextType {
   hospitals: Hospital[]; assessments: HospitalAssessment[]; recommendation: HospitalAssessment | null
   selectedConditionId: string; setSelectedConditionId: (id: string) => void
   journeyState: JourneyState; destinationId: string | null; auditLog: AuditEvent[]
-  dispatch: (options?: { helper?: boolean }) => void
+  dispatch: (options?: DispatchOptions) => void
   startCriticalScenario: () => void
   updateMetroStatus: (update: Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>) => void
   confirmReroute: () => void; keepCurrentDestination: () => void
@@ -93,12 +94,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => { active = false; void client.removeChannel(channel) }
   }, [authUser])
 
-  const dispatch = (options?: { helper?: boolean }) => {
-    const first = recommendHospital(hospitals, requiredFacilities)
+  const dispatch = (options?: DispatchOptions) => {
+    const conditionId = options?.conditionId ?? selectedConditionId
+    const condition = CONDITIONS.find((item) => item.id === conditionId)
+    const facilities = condition?.requiredFacilities
+    const first = recommendHospital(hospitals, facilities)
     if (!first) return
+    setSelectedConditionId(conditionId)
     setDestinationId(first.id); setJourneyState('en-route')
-    const condition = CONDITIONS.find((item) => item.id === selectedConditionId)
     const events: Array<[string, AuditEvent['tone']]> = [
+      ...(options?.source === 'sos-voice' ? [[`SOS voice capture matched a fictional ${condition?.name ?? 'emergency'} scenario locally`, 'blue'] as [string, AuditEvent['tone']]] : []),
       [`${condition?.name ?? 'Emergency'} request created with simulated requirements`, 'blue'],
       [`${first.name} recommended: shortest eligible ETA`, 'green'],
       ['Simulated ambulance unit assigned with required capability kit', 'green'],
@@ -106,7 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       [`Journey started toward ${first.name}`, 'amber'],
     ]
     if (supabase && authUser) {
-      void supabase.from('incidents').insert({ patient_id: authUser.id, condition_id: selectedConditionId, destination_id: first.id, journey_status: 'en-route', simulated_eta_minutes: first.etaMinutes }).select('id').single().then(({ data }) => {
+      void supabase.from('incidents').insert({ patient_id: authUser.id, condition_id: conditionId, destination_id: first.id, journey_status: 'en-route', simulated_eta_minutes: first.etaMinutes }).select('id').single().then(({ data }) => {
         if (data?.id) { setActiveIncidentId(data.id); events.forEach(([text, tone]) => addAudit(text, tone, data.id)) }
       })
     } else events.forEach(([text, tone]) => addAudit(text, tone))

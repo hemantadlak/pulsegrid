@@ -9,6 +9,7 @@ import { AppLoader } from './components/ui/AppLoader'
 import { ConfirmModal } from './components/ui/ConfirmModal'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import { SOSButton } from './components/ui/SOSButton'
+import { SOSVoiceDrawer } from './components/SOSVoiceDrawer'
 const LoginScreen = lazy(async () => ({ default: (await import('./components/LoginScreen')).LoginScreen }))
 const EmergencyDashboard = lazy(async () => ({ default: (await import('./components/EmergencyDashboard')).EmergencyDashboard }))
 const CoordinatorDashboard = lazy(async () => ({ default: (await import('./components/CoordinatorDashboard')).CoordinatorDashboard }))
@@ -18,6 +19,7 @@ function AppContent() {
   const { role, dispatch, signOut } = useApp()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [signOutOpen, setSignOutOpen] = useState(false)
+  const [sosVoiceOpen, setSosVoiceOpen] = useState(false)
   if (!role) return <Suspense fallback={<AppLoader />}><LoginScreen /></Suspense>
   return <>
     <Helmet><title>{role === 'emergency' ? 'Emergency dashboard — PULSEGRID' : 'Hospital coordinator — PULSEGRID'}</title><meta name="description" content="PULSEGRID is a fictional emergency dispatch decision-support simulation." /><meta name="theme-color" content="#2563EB" /><link rel="canonical" href="https://pulsegrid-theta.vercel.app" /></Helmet>
@@ -28,7 +30,10 @@ function AppContent() {
     <motion.main className="main-layout" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
       <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard /> : <CoordinatorDashboard />}</Suspense>
     </motion.main>
-    {role === 'emergency' && <SOSButton onActivate={() => dispatch({ helper: true })} />}
+    {role === 'emergency' && <>
+      <SOSButton onActivate={() => setSosVoiceOpen(true)} />
+      <SOSVoiceDrawer open={sosVoiceOpen} onClose={() => setSosVoiceOpen(false)} onAllocate={(conditionId) => dispatch({ helper: true, conditionId, source: 'sos-voice' })} />
+    </>}
     {signOutOpen && <ConfirmModal variant="signout" onClose={() => setSignOutOpen(false)} onConfirm={() => { void signOut(); setSignOutOpen(false) }} />}
   </>
 }

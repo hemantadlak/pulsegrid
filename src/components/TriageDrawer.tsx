@@ -1,26 +1,12 @@
 import { Bot, CheckCircle2, Send, Sparkles, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { CONDITIONS, type Condition } from '../conditions'
+import type { Condition } from '../conditions'
+import { matchSimulatedCondition } from '../lib/simulatedTriage'
 
 type TriageDrawerProps = {
   open: boolean
   onClose: () => void
   onSelectCondition: (conditionId: string) => void
-}
-
-const keywordGroups: Array<{ words: string[]; conditionId: string }> = [
-  { words: ['chest', 'heart', 'cardiac'], conditionId: 'cardiac-arrest' },
-  { words: ['speech', 'face', 'stroke', 'weakness'], conditionId: 'stroke' },
-  { words: ['breath', 'asthma', 'oxygen'], conditionId: 'breathing' },
-  { words: ['bleed', 'blood', 'wound'], conditionId: 'bleeding' },
-  { words: ['fall', 'accident', 'trauma'], conditionId: 'severe-trauma' },
-  { words: ['burn'], conditionId: 'burns' },
-]
-
-function matchCondition(text: string): Condition {
-  const normalized = text.toLowerCase()
-  const matched = keywordGroups.find(({ words }) => words.some((word) => normalized.includes(word)))
-  return CONDITIONS.find((condition) => condition.id === matched?.conditionId) ?? CONDITIONS[0]
 }
 
 export function TriageDrawer({ open, onClose, onSelectCondition }: TriageDrawerProps) {
@@ -33,7 +19,7 @@ export function TriageDrawer({ open, onClose, onSelectCondition }: TriageDrawerP
     if (!description.trim() || isAnalyzing) return
     setIsAnalyzing(true)
     window.setTimeout(() => {
-      setMatched(matchCondition(description))
+      setMatched(matchSimulatedCondition(description))
       setIsAnalyzing(false)
     }, 520)
   }
