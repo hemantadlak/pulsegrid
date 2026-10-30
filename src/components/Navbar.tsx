@@ -4,6 +4,7 @@ import { useApp } from '../context'
 import { Logo } from './Logo'
 import { t } from '../i18n'
 import { LiveClock } from './ui/LiveClock'
+import { GlobalSearch } from './layout/GlobalSearch'
 
 export function Navbar({ onRequestSignOut }: { onRequestSignOut: () => void }) {
   const { role, lang, setLang } = useApp()
@@ -20,6 +21,7 @@ export function Navbar({ onRequestSignOut }: { onRequestSignOut: () => void }) {
     <nav className="navbar">
       <Logo size="md" />
       <LiveClock />
+      <GlobalSearch />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
         {/* Language toggle */}

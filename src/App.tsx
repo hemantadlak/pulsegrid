@@ -8,7 +8,6 @@ import { Sidebar } from './components/Sidebar'
 import { AppLoader } from './components/ui/AppLoader'
 import { ConfirmModal } from './components/ui/ConfirmModal'
 import { OfflineBanner } from './components/ui/OfflineBanner'
-import { GlobalSearch } from './components/layout/GlobalSearch'
 const LoginScreen = lazy(async () => ({ default: (await import('./components/LoginScreen')).LoginScreen }))
 const EmergencyDashboard = lazy(async () => ({ default: (await import('./components/EmergencyDashboard')).EmergencyDashboard }))
 const CoordinatorDashboard = lazy(async () => ({ default: (await import('./components/CoordinatorDashboard')).CoordinatorDashboard }))
@@ -24,7 +23,6 @@ function AppContent() {
     <div className="sim-banner">PULSEGRID <span>·</span> Demo mode</div>
     <OfflineBanner />
     <Navbar onRequestSignOut={() => setSignOutOpen(true)} />
-    <GlobalSearch />
     <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
     <motion.main className="main-layout" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
       <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard /> : <CoordinatorDashboard />}</Suspense>
