@@ -19,7 +19,7 @@ const conditionIcons: Record<string, LucideIcon> = {
 }
 
 export function EmergencyDashboard() {
-  const { assessments, recommendation, hospitals, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, dispatch, confirmReroute, keepCurrentDestination, lang, setLang } = useApp()
+  const { assessments, recommendation, hospitals, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, alerts, dispatch, confirmReroute, keepCurrentDestination, lang, setLang } = useApp()
   const [loading, setLoading] = useState(false)
   const [requested, setRequested] = useState(false)
   const [search, setSearch] = useState('')
@@ -37,6 +37,7 @@ export function EmergencyDashboard() {
   const filteredConditions = useMemo(() => CONDITIONS.filter((condition) => condition.name.toLowerCase().includes(search.toLowerCase())), [search])
   const visibleConditions = search ? filteredConditions : filteredConditions.slice(0, showAllConditions ? CONDITIONS.length : 6)
   const visibleAudit = showFullHistory ? auditLog : auditLog.slice(0, 3)
+  const emergencyAlerts = alerts.filter((alert) => alert.audience === 'emergency' || alert.audience === 'all').slice(0, 2)
   const activeJourney = journeyState !== 'idle'
   const countdown = useCountdown(destination?.etaMinutes ?? recommendation?.etaMinutes ?? 10, 0, activeJourney)
 
@@ -104,7 +105,7 @@ export function EmergencyDashboard() {
     <div className="stack">
       <section id="dashboard" className="card"><p className="eyebrow">Best eligible hospital · {selectedCondition.name}</p><h2>{recommendation?.name ?? 'Select an option to compare'}</h2>{recommendation ? <><p className="muted-copy">{recommendation.reason}</p><div className="requirement-row">{selectedCondition.requiredFacilities.map((facility) => <span className="requirement-chip" key={facility}>{facility}</span>)}</div></> : <p className="muted-copy">Choose a condition to calculate eligible fictional hospitals.</p>}</section>
       <section id="hospitals" className="card"><p className="eyebrow">Hospital eligibility</p><div className="hospital-list">{assessments.map((hospital) => <div className={`hospital-row ${hospital.eligible ? 'eligible-row' : ''} ${hospital.id === destinationId ? 'selected' : ''}`} key={hospital.id}><div><strong>{hospital.name}</strong><small>{hospital.etaMinutes} min estimated route</small></div><div className="hospital-reason"><span className={`badge ${hospital.eligible ? 'badge-green' : 'badge-red'}`}>{hospital.eligible ? 'Eligible' : 'Rejected'}</span><small>{hospital.reason}</small></div></div>)}</div></section>
-      <section id="alerts" className="card"><p className="eyebrow">Live simulation activity</p>{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the simulation.</p> : <>{visibleAudit.map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div></div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}<div className="simulation-note"><Info size={14} /> Simulation only. It cannot call emergency services or access real hospital, blood, or price information.</div></section>
+      <section id="alerts" className="card"><p className="eyebrow">Live simulation activity</p>{emergencyAlerts.length > 0 && <div className="live-alert-list" aria-live="polite">{emergencyAlerts.map((alert) => <div className="live-alert-item" key={alert.id}><span className={`audit-bar audit-${alert.tone}`} /><div><strong>{alert.text}</strong><small>{alert.time} · Simulation</small></div></div>)}</div>}{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the simulation.</p> : <>{visibleAudit.map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div></div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}<div className="simulation-note"><Info size={14} /> Simulation only. It cannot call emergency services or access real hospital, blood, or price information.</div></section>
       <section id="settings-panel" className="card"><p className="eyebrow">Display settings</p><p className="muted-copy">Choose your preferred interface language.</p><div className="button-row"><button className={`btn-outline compact-btn ${lang === 'en' ? 'active-option' : ''}`} onClick={() => setLang('en')}>English</button><button className={`btn-outline compact-btn ${lang === 'hi' ? 'active-option' : ''}`} onClick={() => setLang('hi')}>हिंदी</button></div></section>
     </div>
     <TriageDrawer open={triageOpen} onClose={() => setTriageOpen(false)} onSelectCondition={chooseCondition} />

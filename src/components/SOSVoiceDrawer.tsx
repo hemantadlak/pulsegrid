@@ -1,6 +1,7 @@
 import { CheckCircle2, LockKeyhole, Mic, MicOff, Radio, Siren, Sparkles, Volume2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Condition } from '../conditions'
+import { useApp } from '../context'
 import { matchSimulatedCondition } from '../lib/simulatedTriage'
 
 type SpeechRecognitionAlternativeLike = { transcript: string }
@@ -35,6 +36,7 @@ type SOSVoiceDrawerProps = {
 }
 
 export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProps) {
+  const { lang } = useApp()
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const microphoneStreamRef = useRef<MediaStream | null>(null)
   const startListeningRef = useRef<(() => void) | null>(null)
@@ -55,7 +57,7 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
     setCaptureState('idle')
   }
 
-  const analyze = (input: string, autoAllocate = false) => {
+  const analyze = (input: string) => {
     const cleanInput = input.trim()
     if (!cleanInput) return
     setCaptureState('processing')
@@ -63,13 +65,7 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       const condition = matchSimulatedCondition(cleanInput)
       setMatched(condition)
       setCaptureState('ready')
-      setMessage(autoAllocate ? 'Fictional SOS support is being assigned locally.' : 'Fictional scenario matched locally. Nothing was sent or saved.')
-      if (autoAllocate) {
-        window.setTimeout(() => {
-          onAllocate(condition.id)
-          close()
-        }, 500)
-      }
+      setMessage('Fictional scenario matched locally. Confirm before any simulation action is started.')
     }, 420)
   }
 
@@ -88,7 +84,7 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       const recognition = new Recognition()
       recognition.continuous = false
       recognition.interimResults = true
-      recognition.lang = navigator.language.startsWith('hi') ? 'hi-IN' : 'en-IN'
+      recognition.lang = lang === 'hi' ? 'hi-IN' : 'en-IN'
       recognition.onresult = (event) => {
         let nextTranscript = ''
         let receivedFinalResult = false
@@ -176,16 +172,18 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       </div>
 
       <label htmlFor="sos-transcript">Local transcript</label>
-      <textarea id="sos-transcript" value={transcript} onChange={(event) => { setTranscript(event.target.value); setMatched(null); setCaptureState('idle') }} placeholder="Say or type a short simulation condition, for example: chest discomfort and difficulty breathing" rows={4} />
+      <textarea id="sos-transcript" value={transcript} onChange={(event) => { setTranscript(event.target.value); setMatched(null); setCaptureState('idle') }} placeholder="Your recognised voice text will appear here. If voice capture is unavailable, you can enter a fictional condition." rows={4} />
       <div className="sos-voice-actions">
-        <button className="btn-outline" onClick={captureState === 'listening' ? handleStopListening : startListening}>{captureState === 'listening' ? <><MicOff size={16} /> Stop listening</> : <><Mic size={16} /> Start microphone</>}</button>
+        <button className="btn-outline" onClick={captureState === 'listening' ? handleStopListening : startListening}>{captureState === 'listening' ? <><MicOff size={16} /> Stop listening</> : <><Mic size={16} /> {captureState === 'error' || captureState === 'fallback' ? 'Retry microphone' : 'Start microphone'}</>}</button>
         <button className="btn-primary" disabled={!transcript.trim() || captureState === 'processing'} onClick={() => analyze(transcript)}>{captureState === 'processing' ? 'Matching…' : 'Match simulation scenario'}</button>
       </div>
+      <p className="sos-browser-hint">For browser speech transcription, Chrome or Edge are recommended. PULSEGRID keeps only the local text shown above.</p>
 
       {matched && <div className="sos-allocation-card">
         <div><span className={`triage-severity severity-${matched.severity}`}>{matched.severity} simulation</span><h3>{matched.name}</h3><p>Allocated in this local simulation:</p></div>
         <ul><li><CheckCircle2 size={15} /> Condition-matched fictional ambulance</li><li><CheckCircle2 size={15} /> Two simulated helpers</li><li><CheckCircle2 size={15} /> Capability-first hospital comparison</li></ul>
-        <button className="btn-danger" onClick={allocate}><Siren size={16} /> Assign simulated SOS support</button>
+        <div className="requirement-row sos-requirements">{matched.requiredFacilities.map((facility) => <span className="requirement-chip" key={facility}>{facility}</span>)}</div>
+        <div className="sos-allocation-actions"><button className="btn-danger" onClick={allocate}><Siren size={16} /> Confirm simulated SOS support</button><button className="sos-change-scenario" onClick={() => { setMatched(null); setTranscript(''); setCaptureState('idle'); setMessage('Describe a different fictional scenario or retry voice capture.') }}>Change scenario</button></div>
       </div>}
 
       <p className="sos-voice-privacy"><LockKeyhole size={13} /> PULSEGRID does not retain audio or add your transcript to the audit history. Browser speech recognition may process audio under your browser provider’s privacy settings.</p>
