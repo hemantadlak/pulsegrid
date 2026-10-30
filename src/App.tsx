@@ -7,7 +7,7 @@ import { EmergencyDashboard } from './components/EmergencyDashboard'
 import { CoordinatorDashboard } from './components/CoordinatorDashboard'
 
 function AppContent() {
-  const { role } = useApp()
+  const { role, dispatch } = useApp()
   const [activeTab, setActiveTab] = useState('dashboard')
 
   if (!role) {
@@ -32,7 +32,7 @@ function AppContent() {
           <CoordinatorDashboard />
         )}
       </main>
-      {role === 'emergency' && <button className="sos-button" onClick={() => document.getElementById('dispatch-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} title="Open simulated emergency request">SOS</button>}
+      {role === 'emergency' && <button className="sos-button" onClick={() => dispatch({ helper: true })} title="Start simulated SOS support">SOS</button>}
     </>
   )
 }

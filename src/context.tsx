@@ -13,9 +13,10 @@ interface AppContextType {
   hospitals: Hospital[]; assessments: HospitalAssessment[]; recommendation: HospitalAssessment | null
   selectedConditionId: string; setSelectedConditionId: (id: string) => void
   journeyState: JourneyState; destinationId: string | null; auditLog: AuditEvent[]
-  dispatch: () => void
+  dispatch: (options?: { helper?: boolean }) => void
   updateMetroStatus: (update: Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>) => void
   confirmReroute: () => void; keepCurrentDestination: () => void
+  recordHospitalDecision: (accepted: boolean, reason?: string) => void
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -35,13 +36,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const recommendation = useMemo(() => recommendHospital(hospitals, requiredFacilities), [hospitals, requiredFacilities])
   const addAudit = (text: string, tone: AuditEvent['tone'] = 'blue') => setAuditLog((previous) => [{ id: Date.now() + Math.random(), text, tone, time: getTime() }, ...previous])
 
-  const dispatch = () => {
+  const dispatch = (options?: { helper?: boolean }) => {
     const first = recommendHospital(hospitals, requiredFacilities)
     if (!first) return
     setDestinationId(first.id); setJourneyState('en-route')
     const condition = CONDITIONS.find((item) => item.id === selectedConditionId)
     addAudit(`${condition?.name ?? 'Emergency'} request created with simulated requirements`)
     addAudit(`${first.name} recommended: shortest eligible ETA`, 'green')
+    addAudit(`Simulated ambulance unit assigned with required capability kit`, 'green')
+    if (options?.helper) addAudit('SOS support helper assigned to accompany the simulated ambulance', 'red')
     addAudit(`Journey started toward ${first.name}`, 'amber')
   }
 
@@ -63,8 +66,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addAudit(`Updated destination confirmed: ${recommendation.name}`, 'green')
   }
   const keepCurrentDestination = () => { setJourneyState('en-route'); addAudit('Current destination retained by simulated user', 'amber') }
+  const recordHospitalDecision = (accepted: boolean, reason = 'Resource constraint') => {
+    addAudit(accepted ? 'Metro Care Centre accepted simulated patient request' : `Metro Care Centre rejected simulated patient request: ${reason}`, accepted ? 'green' : 'red')
+  }
 
-  return <AppContext.Provider value={{ role, setRole, lang, setLang, hospitals, assessments, recommendation, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, dispatch, updateMetroStatus, confirmReroute, keepCurrentDestination }}>{children}</AppContext.Provider>
+  return <AppContext.Provider value={{ role, setRole, lang, setLang, hospitals, assessments, recommendation, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, dispatch, updateMetroStatus, confirmReroute, keepCurrentDestination, recordHospitalDecision }}>{children}</AppContext.Provider>
 }
 
 export function useApp() {

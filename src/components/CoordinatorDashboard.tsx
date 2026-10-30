@@ -3,7 +3,7 @@ import { Minus, Plus } from 'lucide-react'
 import { useApp } from '../context'
 
 export function CoordinatorDashboard() {
-  const { hospitals, auditLog, updateMetroStatus } = useApp()
+  const { hospitals, auditLog, updateMetroStatus, recordHospitalDecision } = useApp()
   const metro = hospitals.find((hospital) => hospital.id === 'metro')!
   const [icuBeds, setIcuBeds] = useState(metro.icuBeds)
   const [specialistOn, setSpecialistOn] = useState(metro.cardiacSpecialist)
@@ -19,7 +19,7 @@ export function CoordinatorDashboard() {
     updateMetroStatus({ icuBeds, cardiacSpecialist: specialistOn, erStatus })
     setSaved(true); setToast('Simulated hospital status updated'); window.setTimeout(() => { setSaved(false); setToast('') }, 2600)
   }
-  const resolveIncoming = (accepted: boolean) => { setIncoming(false); setToast(accepted ? 'Simulated patient accepted — preparing bay' : 'Simulated patient redirected'); window.setTimeout(() => setToast(''), 2600) }
+  const resolveIncoming = (accepted: boolean) => { recordHospitalDecision(accepted, 'ICU capacity unavailable'); setIncoming(false); setToast(accepted ? 'Simulated patient accepted — preparing bay' : 'Simulated patient rejected due to lack of resources'); window.setTimeout(() => setToast(''), 2600) }
 
   return <div className="grid-50-50">
     <div className="stack">
@@ -48,7 +48,7 @@ export function CoordinatorDashboard() {
         <p className="eyebrow">Demo trigger</p>
         <p>For the key demo, set ICU beds to <strong>0</strong> and save while the Emergency User journey is active.</p>
       </section>
-      {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · AMB-DEMO-07 · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => resolveIncoming(true)}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => resolveIncoming(false)}>Redirect</button></div></section>}
+      {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Demo ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => resolveIncoming(true)}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => resolveIncoming(false)}>Reject — lack of resources</button></div></section>}
     </div>
 
     <section className="card">
