@@ -13,6 +13,7 @@ export function CoordinatorDashboard() {
   const [bloodBank, setBloodBank] = useState<'full' | 'low' | 'critical'>('full')
   const [incoming, setIncoming] = useState(true)
   const [toast, setToast] = useState('')
+  const [showFullHistory, setShowFullHistory] = useState(false)
 
   useEffect(() => { setIcuBeds(metro.icuBeds); setSpecialistOn(metro.cardiacSpecialist); setErStatus(metro.erStatus) }, [metro])
   const save = () => {
@@ -53,9 +54,9 @@ export function CoordinatorDashboard() {
 
     <section id="eventlog" className="card">
       <p className="eyebrow">Shared simulation audit log</p>
-      {auditLog.length === 0 ? <p className="muted-copy">Start an Emergency User journey first, then return here to change ICU capacity.</p> : auditLog.map((event) => <div className="audit-item" key={event.id}>
+      {auditLog.length === 0 ? <p className="muted-copy">Start an Emergency User journey first, then return here to change ICU capacity.</p> : <>{(showFullHistory ? auditLog : auditLog.slice(0, 3)).map((event) => <div className="audit-item" key={event.id}>
         <span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div>
-      </div>)}
+      </div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}
     </section>
     <section id="settings-panel" className="card coordinator-settings"><p className="eyebrow">Display settings</p><p className="muted-copy">Use the English/Hindi control in the navigation bar to change the interface language.</p></section>
     {toast && <div className={`toast ${toast.startsWith('No worries') ? 'toast-danger' : 'toast-success'}`} role="status">{toast}</div>}
