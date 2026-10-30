@@ -98,7 +98,7 @@ export function EmergencyDashboard() {
       </section>
 
       {journeyState === 'reroute-required' && recommendation && <section className="reroute-alert" role="alert"><div className="alert-heading"><AlertTriangle size={20} /> Destination reassessment required</div><p>Metro Care Centre no longer meets the simulated ICU requirement. {recommendation.name} is now the next eligible destination.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={confirmReroute}>Confirm updated destination</button><button className="btn-outline compact-btn" onClick={keepCurrentDestination}>Keep current destination</button></div></section>}
-      <section id="dispatch" className="card map-card"><div className="map-caption"><span className="status-dot" /> Live simulation route · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{activeJourney && <div className="countdown-card"><span>AMBULANCE ETA</span><strong>{countdown}</strong><small>active simulation route</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} userLocation={userLocation} journeyActive={activeJourney} /></section>
+      <section id="dispatch" className="card map-card"><div className="map-caption"><span className="status-dot" /> Traffic-aware simulation route · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{activeJourney && <div className="countdown-card"><span>AMBULANCE ETA</span><strong>{countdown}</strong><small>active simulation route</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} userLocation={userLocation} journeyActive={activeJourney} /></section>
     </div>
 
     <div className="stack">

@@ -36,6 +36,7 @@ type SOSVoiceDrawerProps = {
 
 export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProps) {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const microphoneStreamRef = useRef<MediaStream | null>(null)
   const startListeningRef = useRef<(() => void) | null>(null)
   const [captureState, setCaptureState] = useState<CaptureState>('idle')
   const [transcript, setTranscript] = useState('')
@@ -45,6 +46,8 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
   const stopListening = () => {
     recognitionRef.current?.stop()
     recognitionRef.current = null
+    microphoneStreamRef.current?.getTracks().forEach((track) => track.stop())
+    microphoneStreamRef.current = null
   }
 
   const handleStopListening = () => {
@@ -96,15 +99,17 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
         setTranscript(nextTranscript.trim())
         if (receivedFinalResult) {
           stopListening()
-          analyze(nextTranscript, true)
+          analyze(nextTranscript)
         }
       }
       recognition.onerror = (event) => {
         recognitionRef.current = null
         setCaptureState(event.error === 'not-allowed' ? 'fallback' : 'error')
-        setMessage(event.error === 'not-allowed'
-          ? 'Microphone permission was not granted. Use the local text fallback below.'
-          : 'Voice capture could not start. You can retry or use the local text fallback.')
+        setMessage(event.error === 'not-allowed' || event.error === 'service-not-allowed'
+          ? 'Microphone access was not granted. Allow it in your browser, then try again.'
+          : event.error === 'network'
+            ? 'Speech transcription needs Chrome or Edge with an internet connection. You can retry or use the text field below.'
+            : 'Voice capture could not start. You can retry or use the local text fallback.')
       }
       recognition.onend = () => {
         if (recognitionRef.current === recognition) {
@@ -114,6 +119,13 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       }
       recognitionRef.current = recognition
       setCaptureState('listening')
+      if (navigator.mediaDevices?.getUserMedia) {
+        void navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+          microphoneStreamRef.current = stream
+        }).catch(() => {
+          // SpeechRecognition reports the user-facing permission error itself.
+        })
+      }
       recognition.start()
     } catch {
       setCaptureState('error')
@@ -157,7 +169,7 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       <div className={`sos-voice-orb ${captureState === 'listening' ? 'is-listening' : ''}`}><Mic size={30} /></div>
       <span className="drawer-label"><Sparkles size={13} /> simulated SOS voice capture</span>
       <h2 id="sos-voice-title">Describe the emergency</h2>
-      <p className="sos-voice-intro">PULSEGRID will only use the description locally to choose a fictional scenario and prepare the simulation workflow. It is not a diagnosis or a real dispatch request.</p>
+      <p className="sos-voice-intro">PULSEGRID uses the recognised text only to select a fictional scenario and prepare the simulation workflow. It is not a diagnosis or a real dispatch request.</p>
 
       <div className={`sos-voice-status state-${captureState}`} aria-live="polite">
         {captureState === 'listening' ? <><Volume2 size={17} /> Listening… describe the simulation scenario</> : captureState === 'processing' ? <><Radio size={17} /> Matching the fictional scenario…</> : <><MicOff size={17} /> {message || 'Press the microphone to begin voice capture.'}</>}
@@ -176,7 +188,7 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
         <button className="btn-danger" onClick={allocate}><Siren size={16} /> Assign simulated SOS support</button>
       </div>}
 
-      <p className="sos-voice-privacy"><LockKeyhole size={13} /> No audio file or transcript is uploaded, retained, or added to the audit history.</p>
+      <p className="sos-voice-privacy"><LockKeyhole size={13} /> PULSEGRID does not retain audio or add your transcript to the audit history. Browser speech recognition may process audio under your browser provider’s privacy settings.</p>
     </section>
   </div>
 }
