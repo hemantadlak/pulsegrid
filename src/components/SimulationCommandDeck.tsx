@@ -23,7 +23,7 @@ export function SimulationCommandDeck({ onOpenAssist }: SimulationCommandDeckPro
         <h1>Capability-aware dispatch rehearsal</h1>
         <p>Explore the decision flow with fictional hospitals, fictional units, and a human approval step.</p>
       </div>
-      <span className="simulation-status"><ShieldCheck size={15} /> Demo data only</span>
+      <span className="simulation-status"><ShieldCheck size={15} /> Fictional data only</span>
     </div>
 
     <div className="command-stat-grid">
@@ -33,8 +33,8 @@ export function SimulationCommandDeck({ onOpenAssist }: SimulationCommandDeckPro
     </div>
 
     <div className="command-actions">
-      <button className="command-primary" onClick={startCriticalScenario}><Play size={16} /> Start cardiac reroute demo</button>
-      <button className="command-secondary" onClick={onOpenAssist}><Bot size={16} /> Describe symptoms (demo)</button>
+      <button className="command-primary" onClick={startCriticalScenario}><Play size={16} /> Start cardiac reroute simulation</button>
+      <button className="command-secondary" onClick={onOpenAssist}><Bot size={16} /> Describe symptoms</button>
     </div>
   </section>
 }

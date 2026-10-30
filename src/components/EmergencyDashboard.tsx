@@ -3,7 +3,7 @@ import { Activity, AlertTriangle, Bone, Brain, Droplets, Flame, HeartPulse, Info
 import { useApp } from '../context'
 import { PulseMap } from './PulseMap'
 import { CONDITIONS } from '../conditions'
-import { DEMO_BLOOD_SUPPORT } from '../data'
+import { FICTIONAL_BLOOD_SUPPORT } from '../data'
 import { useCountdown } from '../hooks/useCountdown'
 import { ConfirmModal } from './ui/ConfirmModal'
 import { SimulationCommandDeck } from './SimulationCommandDeck'
@@ -53,10 +53,10 @@ export function EmergencyDashboard() {
   const chooseAmbulance = () => {
     setAmbulanceChoice('yes')
     setLocationStatus('Requesting browser location…')
-    if (!navigator.geolocation) { setLocationStatus('Location is unavailable in this browser. Using a demo point.'); return }
+    if (!navigator.geolocation) { setLocationStatus('Location is unavailable in this browser. Using a fictional map point.'); return }
     navigator.geolocation.getCurrentPosition(
       (position) => { setUserLocation([position.coords.latitude, position.coords.longitude]); setLocationStatus('Location shared for this browser session.') },
-      () => setLocationStatus('Location was not shared. Using a demo point.'),
+      () => setLocationStatus('Location was not shared. Using a fictional map point.'),
       { enableHighAccuracy: false, timeout: 9000, maximumAge: 60000 },
     )
   }
@@ -91,20 +91,20 @@ export function EmergencyDashboard() {
           </button>
         </>}
 
-        {ambulanceChoice === 'no' && <div className="support-panel"><strong>What support do you need?</strong><div className="button-row"><button className={`btn-outline compact-btn ${supportNeed === 'hospital' ? 'active-option' : ''}`} onClick={() => setSupportNeed('hospital')}>Nearby capable hospitals</button><button className={`btn-outline compact-btn ${supportNeed === 'guidance' ? 'active-option' : ''}`} onClick={() => setSupportNeed('guidance')}>Care resource guide</button></div>{supportNeed && <p className="muted-copy">{supportNeed === 'hospital' ? 'The eligible-hospital list on the right is ranked by capability and simulated ETA.' : 'This demo can show informational resources only; it does not provide medical advice or contact services.'}</p>}</div>}
+        {ambulanceChoice === 'no' && <div className="support-panel"><strong>What support do you need?</strong><div className="button-row"><button className={`btn-outline compact-btn ${supportNeed === 'hospital' ? 'active-option' : ''}`} onClick={() => setSupportNeed('hospital')}>Nearby capable hospitals</button><button className={`btn-outline compact-btn ${supportNeed === 'guidance' ? 'active-option' : ''}`} onClick={() => setSupportNeed('guidance')}>Care resource guide</button></div>{supportNeed && <p className="muted-copy">{supportNeed === 'hospital' ? 'The eligible-hospital list on the right is ranked by capability and simulated ETA.' : 'This simulation can show informational resources only; it does not provide medical advice or contact services.'}</p>}</div>}
 
-        <div className="blood-question"><div><strong>Need blood or plasma support?</strong><small>Fictional demo inventory only.</small></div><button className="btn-outline" onClick={() => setBloodOpen((open) => !open)}>{bloodOpen ? 'Hide list' : 'Yes — view demo list'}</button></div>
-        {bloodOpen && <div className="blood-list">{DEMO_BLOOD_SUPPORT.map((item) => <div className="blood-row" key={item.hospital}><div><strong>{item.hospital}</strong><small>{item.eta} min simulated ETA · Blood: {item.blood.join(', ') || 'None'} · Plasma: {item.plasma.join(', ') || 'None'}</small></div><span>{item.price}</span></div>)}<p>Availability and prices are fictional, illustrative values — never for real use.</p></div>}
+        <div className="blood-question"><div><strong>Need blood or plasma support?</strong><small>Fictional simulation inventory only.</small></div><button className="btn-outline" onClick={() => setBloodOpen((open) => !open)}>{bloodOpen ? 'Hide list' : 'Yes — view simulation list'}</button></div>
+        {bloodOpen && <div className="blood-list">{FICTIONAL_BLOOD_SUPPORT.map((item) => <div className="blood-row" key={item.hospital}><div><strong>{item.hospital}</strong><small>{item.eta} min simulated ETA · Blood: {item.blood.join(', ') || 'None'} · Plasma: {item.plasma.join(', ') || 'None'}</small></div><span>{item.price}</span></div>)}<p>Availability and prices are fictional, illustrative values — never for real use.</p></div>}
       </section>
 
       {journeyState === 'reroute-required' && recommendation && <section className="reroute-alert" role="alert"><div className="alert-heading"><AlertTriangle size={20} /> Destination reassessment required</div><p>Metro Care Centre no longer meets the simulated ICU requirement. {recommendation.name} is now the next eligible destination.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={confirmReroute}>Confirm updated destination</button><button className="btn-outline compact-btn" onClick={keepCurrentDestination}>Keep current destination</button></div></section>}
-      <section id="dispatch" className="card map-card"><div className="map-caption"><span className="status-dot" /> Live route view · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{activeJourney && <div className="countdown-card"><span>AMBULANCE ETA</span><strong>{countdown}</strong><small>active route</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} userLocation={userLocation} journeyActive={activeJourney} /></section>
+      <section id="dispatch" className="card map-card"><div className="map-caption"><span className="status-dot" /> Live simulation route · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{activeJourney && <div className="countdown-card"><span>AMBULANCE ETA</span><strong>{countdown}</strong><small>active simulation route</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} userLocation={userLocation} journeyActive={activeJourney} /></section>
     </div>
 
     <div className="stack">
       <section id="dashboard" className="card"><p className="eyebrow">Best eligible hospital · {selectedCondition.name}</p><h2>{recommendation?.name ?? 'Select an option to compare'}</h2>{recommendation ? <><p className="muted-copy">{recommendation.reason}</p><div className="requirement-row">{selectedCondition.requiredFacilities.map((facility) => <span className="requirement-chip" key={facility}>{facility}</span>)}</div></> : <p className="muted-copy">Choose a condition to calculate eligible fictional hospitals.</p>}</section>
       <section id="hospitals" className="card"><p className="eyebrow">Hospital eligibility</p><div className="hospital-list">{assessments.map((hospital) => <div className={`hospital-row ${hospital.eligible ? 'eligible-row' : ''} ${hospital.id === destinationId ? 'selected' : ''}`} key={hospital.id}><div><strong>{hospital.name}</strong><small>{hospital.etaMinutes} min estimated route</small></div><div className="hospital-reason"><span className={`badge ${hospital.eligible ? 'badge-green' : 'badge-red'}`}>{hospital.eligible ? 'Eligible' : 'Rejected'}</span><small>{hospital.reason}</small></div></div>)}</div></section>
-      <section id="alerts" className="card"><p className="eyebrow">Activity log</p>{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the demo.</p> : <>{visibleAudit.map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Demo mode</small></div></div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}<div className="simulation-note"><Info size={14} /> Demo mode only. It cannot call emergency services or access real hospital, blood, or price information.</div></section>
+      <section id="alerts" className="card"><p className="eyebrow">Live simulation activity</p>{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the simulation.</p> : <>{visibleAudit.map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div></div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}<div className="simulation-note"><Info size={14} /> Simulation only. It cannot call emergency services or access real hospital, blood, or price information.</div></section>
       <section id="settings-panel" className="card"><p className="eyebrow">Display settings</p><p className="muted-copy">Choose your preferred interface language.</p><div className="button-row"><button className={`btn-outline compact-btn ${lang === 'en' ? 'active-option' : ''}`} onClick={() => setLang('en')}>English</button><button className={`btn-outline compact-btn ${lang === 'hi' ? 'active-option' : ''}`} onClick={() => setLang('hi')}>हिंदी</button></div></section>
     </div>
     <TriageDrawer open={triageOpen} onClose={() => setTriageOpen(false)} onSelectCondition={chooseCondition} />

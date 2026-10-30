@@ -100,12 +100,12 @@ export function LoginScreen() {
 
         {/* Enter button */}
         <button
-          id="enter-demo-btn"
+          id="enter-simulation-btn"
           className="btn-primary"
           disabled={!selected}
           onClick={handleEnter}
         >
-          {t('enterDemoMode', lang)}
+          {t('enterSimulation', lang)}
         </button>
 
         {backendReady && <div className="auth-panel">
@@ -125,7 +125,7 @@ export function LoginScreen() {
             marginTop: 12,
           }}
         >
-          {backendReady ? 'Account mode uses only fictional demo data.' : t('noRealData', lang)}
+          {backendReady ? 'Account mode uses only fictional simulation data.' : t('noRealData', lang)}
         </p>
       </div>
     </div>

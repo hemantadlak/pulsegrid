@@ -36,6 +36,7 @@ type SOSVoiceDrawerProps = {
 
 export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProps) {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const startListeningRef = useRef<(() => void) | null>(null)
   const [captureState, setCaptureState] = useState<CaptureState>('idle')
   const [transcript, setTranscript] = useState('')
   const [matched, setMatched] = useState<Condition | null>(null)
@@ -119,6 +120,7 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       setMessage('Voice capture could not start. Use the local text fallback below.')
     }
   }
+  startListeningRef.current = startListening
 
   const close = () => {
     stopListening()
@@ -136,12 +138,16 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
   }
 
   useEffect(() => {
-    if (open) startListening()
-    else stopListening()
-    return () => stopListening()
-    // Opening the drawer is the explicit user SOS gesture that starts voice capture.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const beginCapture = () => startListeningRef.current?.()
+    window.addEventListener('pulsegrid:start-sos-voice', beginCapture)
+    return () => window.removeEventListener('pulsegrid:start-sos-voice', beginCapture)
+  }, [])
+
+  useEffect(() => {
+    if (!open) stopListening()
   }, [open])
+
+  useEffect(() => () => recognitionRef.current?.stop(), [])
 
   if (!open) return null
 
@@ -151,21 +157,21 @@ export function SOSVoiceDrawer({ open, onClose, onAllocate }: SOSVoiceDrawerProp
       <div className={`sos-voice-orb ${captureState === 'listening' ? 'is-listening' : ''}`}><Mic size={30} /></div>
       <span className="drawer-label"><Sparkles size={13} /> simulated SOS voice capture</span>
       <h2 id="sos-voice-title">Describe the emergency</h2>
-      <p className="sos-voice-intro">PULSEGRID will only use the description locally to choose a fictional scenario and prepare the demo workflow. It is not a diagnosis or a real dispatch request.</p>
+      <p className="sos-voice-intro">PULSEGRID will only use the description locally to choose a fictional scenario and prepare the simulation workflow. It is not a diagnosis or a real dispatch request.</p>
 
       <div className={`sos-voice-status state-${captureState}`} aria-live="polite">
-        {captureState === 'listening' ? <><Volume2 size={17} /> Listening… speak your simulated scenario</> : captureState === 'processing' ? <><Radio size={17} /> Matching the fictional scenario…</> : <><MicOff size={17} /> {message || 'Press the microphone to begin voice capture.'}</>}
+        {captureState === 'listening' ? <><Volume2 size={17} /> Listening… describe the simulation scenario</> : captureState === 'processing' ? <><Radio size={17} /> Matching the fictional scenario…</> : <><MicOff size={17} /> {message || 'Press the microphone to begin voice capture.'}</>}
       </div>
 
       <label htmlFor="sos-transcript">Local transcript</label>
-      <textarea id="sos-transcript" value={transcript} onChange={(event) => { setTranscript(event.target.value); setMatched(null); setCaptureState('idle') }} placeholder="Say or type a short simulated condition, for example: chest discomfort and difficulty breathing" rows={4} />
+      <textarea id="sos-transcript" value={transcript} onChange={(event) => { setTranscript(event.target.value); setMatched(null); setCaptureState('idle') }} placeholder="Say or type a short simulation condition, for example: chest discomfort and difficulty breathing" rows={4} />
       <div className="sos-voice-actions">
         <button className="btn-outline" onClick={captureState === 'listening' ? handleStopListening : startListening}>{captureState === 'listening' ? <><MicOff size={16} /> Stop listening</> : <><Mic size={16} /> Start microphone</>}</button>
-        <button className="btn-primary" disabled={!transcript.trim() || captureState === 'processing'} onClick={() => analyze(transcript)}>{captureState === 'processing' ? 'Matching…' : 'Match demo scenario'}</button>
+        <button className="btn-primary" disabled={!transcript.trim() || captureState === 'processing'} onClick={() => analyze(transcript)}>{captureState === 'processing' ? 'Matching…' : 'Match simulation scenario'}</button>
       </div>
 
       {matched && <div className="sos-allocation-card">
-        <div><span className={`triage-severity severity-${matched.severity}`}>{matched.severity} simulation</span><h3>{matched.name}</h3><p>Allocated in this local demo:</p></div>
+        <div><span className={`triage-severity severity-${matched.severity}`}>{matched.severity} simulation</span><h3>{matched.name}</h3><p>Allocated in this local simulation:</p></div>
         <ul><li><CheckCircle2 size={15} /> Condition-matched fictional ambulance</li><li><CheckCircle2 size={15} /> Two simulated helpers</li><li><CheckCircle2 size={15} /> Capability-first hospital comparison</li></ul>
         <button className="btn-danger" onClick={allocate}><Siren size={16} /> Assign simulated SOS support</button>
       </div>}

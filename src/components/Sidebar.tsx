@@ -48,7 +48,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         ))}
       </div>
       <div style={{ padding: '0 20px', color: 'var(--text-secondary)', fontSize: 11 }}>
-        PULSEGRID · Demo mode
+        PULSEGRID · Simulation
       </div>
     </aside>
   )

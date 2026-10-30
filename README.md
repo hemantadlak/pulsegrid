@@ -6,7 +6,7 @@ role-based hospital controls, and an optional Supabase persistence layer.
 
 ## Features
 
-- Emergency User and Hospital Coordinator demo roles
+- Emergency User and Hospital Coordinator simulation roles
 - Twelve simulated emergency conditions with capability-first eligibility checks
 - Browser-session location permission, Leaflet route visualization, and ETA timer
 - SOS simulation with two fictional support helpers
@@ -14,7 +14,7 @@ role-based hospital controls, and an optional Supabase persistence layer.
 - Hindi/English controls, command search, loader, offline notice, and 404 page
 - Optional Supabase Auth, fictional data persistence, RLS, and Realtime subscriptions
 
-## Demo flow
+## Simulation flow
 
 1. Choose **Emergency User** and select a simulated condition.
 2. Request simulated assistance to see capability-first hospital matching.
@@ -39,7 +39,7 @@ npm run build
 
 ## Optional Supabase backend
 
-The app works in local demo mode without a backend. To enable sign-up, sign-in,
+The app works in local simulation mode without a backend. To enable sign-up, sign-in,
 persisted fictional audit events, and real-time fictional hospital-status updates:
 
 1. Create a Supabase project.
@@ -55,7 +55,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
    Metro Care Centre, add their authenticated user id to `hospital_members` in
    the Supabase Table Editor.
 
-The Supabase schema intentionally stores only fictional demo information. Do
+The Supabase schema intentionally stores only fictional simulation information. Do
 not store patient information, real locations, actual hospital availability, or
 real blood/plasma inventory in this hackathon prototype.
 

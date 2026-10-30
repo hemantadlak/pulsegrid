@@ -28,9 +28,9 @@ export function CoordinatorDashboard() {
   return <div className="grid-50-50">
     <div className="stack">
       <section id="dashboard" className="card">
-        <p className="eyebrow">Hospital coordinator · simulated</p>
+        <p className="eyebrow">Hospital coordinator · live simulation sync</p>
         <h1>Metro Care Centre</h1>
-        <p className="muted-copy">Update fictional resource availability. Saving changes triggers a destination reassessment if a journey is active.</p>
+        <p className="muted-copy">Update fictional resource availability. Saving changes immediately update open PULSEGRID simulation tabs and trigger a destination reassessment when a journey is active.</p>
         <div className="status-summary"><span className="badge badge-blue">ICU: {icuBeds} beds</span><span className={`badge ${specialistOn ? 'badge-green' : 'badge-red'}`}>Cardiac specialist: {specialistOn ? 'available' : 'unavailable'}</span></div>
       </section>
 
@@ -45,14 +45,14 @@ export function CoordinatorDashboard() {
         <div className="data-row"><span>Ventilators available</span><div className="counter-wrap"><button className="counter-btn" onClick={() => setVentilators((value) => Math.max(0, value - 1))}><Minus size={15} /></button><strong className="counter-value">{ventilators}</strong><button className="counter-btn" onClick={() => setVentilators((value) => Math.min(8, value + 1))}><Plus size={15} /></button></div></div>
         <div className="data-row column-row"><span>Emergency room status</span><div className="seg-control">{(['accepting', 'limited', 'diverting'] as const).map((value) => <button key={value} className={`seg-btn ${erStatus === value ? 'active' : ''}`} onClick={() => setErStatus(value)}>{value}</button>)}</div></div>
         <div className="data-row column-row"><span>Blood bank status</span><div className="seg-control">{(['full', 'low', 'critical'] as const).map((value) => <button key={value} className={`seg-btn ${bloodBank === value ? 'active' : ''}`} onClick={() => setBloodBank(value)}>{value}</button>)}</div></div>
-        <button id="update-status-btn" className="btn-primary" onClick={save}>{saved ? 'Status saved' : 'Update simulated status'}</button>
+        <button id="update-status-btn" className="btn-primary" onClick={save}>{saved ? 'Status saved' : 'Update simulation status'}</button>
       </section>
 
-      <section className="card quick-demo">
-        <p className="eyebrow">Demo trigger</p>
-        <p>For the key demo, set ICU beds to <strong>0</strong> and save while the Emergency User journey is active.</p>
+      <section className="card quick-simulation">
+        <p className="eyebrow">Reroute scenario</p>
+        <p>Set ICU beds to <strong>0</strong> and save while the Emergency User journey is active to trigger the live fictional reroute flow.</p>
       </section>
-      {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Demo ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => setPendingDecision('accept')}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => setPendingDecision('reject')}>Reject — lack of resources</button></div></section>}
+      {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Simulation ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => setPendingDecision('accept')}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => setPendingDecision('reject')}>Reject — lack of resources</button></div></section>}
       {incoming && <PreparationChecklist />}
     </div>
 

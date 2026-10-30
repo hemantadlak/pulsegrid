@@ -16,7 +16,7 @@ export function PreparationChecklist() {
   const toggle = (item: string) => setCompleted((current) => current.includes(item) ? current.filter((value) => value !== item) : [...current, item])
 
   return <section className="preparation-checklist">
-    <div className="prep-heading"><div><span><Sparkles size={13} /> DEMO PREPARATION GUIDE</span><h3>{condition.name} scenario</h3></div><ClipboardCheck size={20} /></div>
+    <div className="prep-heading"><div><span><Sparkles size={13} /> SIMULATION PREPARATION GUIDE</span><h3>{condition.name} scenario</h3></div><ClipboardCheck size={20} /></div>
     <p>Local simulation checklist — not clinical instructions.</p>
     <div className="prep-items">{items.map((item) => <button key={item} className={completed.includes(item) ? 'complete' : ''} onClick={() => toggle(item)}><span>{completed.includes(item) && <Check size={13} />}</span>{item}</button>)}</div>
     <div className="prep-concern">Human coordinator approval is required before every simulated status change.</div>

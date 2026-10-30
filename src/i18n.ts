@@ -10,7 +10,7 @@ export const translations = {
   emergencyUserSub: { en: 'Request & track emergency dispatch', hi: 'आपातकालीन प्रेषण का अनुरोध करें और ट्रैक करें' },
   hospitalCoordinator: { en: 'Hospital Coordinator', hi: 'अस्पताल समन्वयक' },
   hospitalCoordinatorSub: { en: 'Manage hospital capacity & status', hi: 'अस्पताल की क्षमता और स्थिति प्रबंधित करें' },
-  enterDemoMode: { en: 'Enter Demo Mode →', hi: 'डेमो मोड में प्रवेश करें →' },
+  enterSimulation: { en: 'Enter Simulation →', hi: 'सिमुलेशन में प्रवेश करें →' },
   noRealData: { en: 'No real data is collected or transmitted.', hi: 'कोई वास्तविक डेटा एकत्र या प्रसारित नहीं किया जाता।' },
 
   // --- Nav / Global ---

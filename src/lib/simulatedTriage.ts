@@ -16,7 +16,7 @@ const keywordGroups: Array<{ words: string[]; conditionId: string }> = [
 ]
 
 /**
- * A local-only keyword matcher for the PULSEGRID demo. It does not diagnose,
+ * A local-only keyword matcher for the PULSEGRID simulation. It does not diagnose,
  * make clinical decisions, or send text/audio to any service.
  */
 export function matchSimulatedCondition(text: string): Condition {

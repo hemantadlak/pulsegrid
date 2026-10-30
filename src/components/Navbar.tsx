@@ -44,7 +44,7 @@ export function Navbar({ onRequestSignOut }: { onRequestSignOut: () => void }) {
 
         {role === 'coordinator' && <>
           <button className="notification-bell" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications — 1 unread"><Bell size={18} /><span>1</span></button>
-          {notificationsOpen && <div className="notification-dropdown"><div className="notification-title">Incoming simulated patient <button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><strong>Cardiac care request</strong><small>AMB-DEMO-07 · simulated ETA 7 min</small><p>Review the Incoming simulated patient card in the coordinator dashboard.</p></div>}
+          {notificationsOpen && <div className="notification-dropdown"><div className="notification-title">Incoming simulated patient <button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><strong>Cardiac care request</strong><small>AMB-SIM-07 · simulated ETA 7 min</small><p>Review the Incoming simulated patient card in the coordinator dashboard.</p></div>}
         </>}
 
         {/* Role badge */}

@@ -2,7 +2,7 @@ import { AlertTriangle, CheckCircle2, LogOut, Truck, X } from 'lucide-react'
 
 type Variant = 'ambulance' | 'accept' | 'redirect' | 'signout'
 const config = {
-  ambulance: { icon: Truck, title: 'Confirm ambulance request', text: 'A simulated ambulance will be assigned to this demo request.', confirm: 'Request ambulance', tone: 'danger' },
+  ambulance: { icon: Truck, title: 'Confirm ambulance request', text: 'A simulated ambulance will be assigned to this simulation request.', confirm: 'Request ambulance', tone: 'danger' },
   accept: { icon: CheckCircle2, title: 'Accept incoming patient', text: 'Confirm that your fictional hospital is ready to prepare the required facilities.', confirm: 'Accept patient', tone: 'success' },
   redirect: { icon: AlertTriangle, title: 'Reject incoming patient', text: 'The simulation will recommend the next eligible fictional hospital.', confirm: 'Reject & reroute', tone: 'danger' },
   signout: { icon: LogOut, title: 'Sign out', text: 'You will return to the role selection screen.', confirm: 'Sign out', tone: 'neutral' },

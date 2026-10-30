@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { INITIAL_HOSPITALS, type Hospital } from './data'
 import { assessHospitals, recommendHospital, type HospitalAssessment } from './decisionEngine'
@@ -12,6 +12,11 @@ export type AuditEvent = { id: number; text: string; time: string; tone: 'blue' 
 type AuthResult = { error: string | null; message?: string }
 type DispatchOptions = { helper?: boolean; conditionId?: string; source?: 'sos-voice' }
 type DatabaseHospital = { id: string; name: string; eta_minutes: number; icu_beds: number; cardiac_specialist: boolean; er_status: Hospital['erStatus']; lat: number; lng: number; facilities: string[] }
+type SharedHospitalStatus = Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>
+type LiveSyncEvent =
+  | { type: 'hospital-status'; hospitalId: string; status: SharedHospitalStatus }
+  | { type: 'journey'; journeyState: JourneyState; destinationId: string | null }
+  | { type: 'audit'; event: AuditEvent }
 
 interface AppContextType {
   role: Role; setRole: (role: Role) => void; lang: Lang; setLang: (lang: Lang) => void
@@ -45,6 +50,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [authBusy, setAuthBusy] = useState(isSupabaseConfigured)
+  const syncChannelRef = useRef<BroadcastChannel | null>(null)
 
   useEffect(() => { document.body.dataset.lang = lang }, [lang])
   const requiredFacilities = CONDITIONS.find((condition) => condition.id === selectedConditionId)?.requiredFacilities
@@ -54,10 +60,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addAudit = (text: string, tone: AuditEvent['tone'] = 'blue', incidentId = activeIncidentId) => {
     const event = { id: Date.now() + Math.random(), text, tone, time: getTime() } satisfies AuditEvent
     setAuditLog((previous) => [event, ...previous])
+    syncChannelRef.current?.postMessage({ type: 'audit', event } satisfies LiveSyncEvent)
     if (supabase && authUser) {
       void supabase.from('audit_events').insert({ incident_id: incidentId, patient_id: authUser.id, event_text: text, source: role === 'coordinator' ? 'hospital_coordinator' : 'emergency_user', tone })
     }
   }
+
+  const broadcastJourney = (nextJourneyState: JourneyState, nextDestinationId: string | null) => {
+    syncChannelRef.current?.postMessage({ type: 'journey', journeyState: nextJourneyState, destinationId: nextDestinationId } satisfies LiveSyncEvent)
+  }
+
+  const broadcastHospitalStatus = (hospitalId: string, status: SharedHospitalStatus) => {
+    syncChannelRef.current?.postMessage({ type: 'hospital-status', hospitalId, status } satisfies LiveSyncEvent)
+  }
+
+  useEffect(() => {
+    if (!('BroadcastChannel' in window)) return
+    const channel = new BroadcastChannel('pulsegrid-live-simulation')
+    syncChannelRef.current = channel
+    channel.onmessage = ({ data }: MessageEvent<LiveSyncEvent>) => {
+      if (data.type === 'hospital-status') {
+        setHospitals((current) => current.map((hospital) => hospital.id === data.hospitalId ? { ...hospital, ...data.status } : hospital))
+      }
+      if (data.type === 'journey') {
+        setJourneyState(data.journeyState)
+        setDestinationId(data.destinationId)
+      }
+      if (data.type === 'audit') {
+        setAuditLog((current) => current.some((event) => event.id === data.event.id) ? current : [data.event, ...current])
+      }
+    }
+    return () => {
+      syncChannelRef.current = null
+      channel.close()
+    }
+  }, [])
 
   useEffect(() => {
     if (!supabase) { setAuthBusy(false); return }
@@ -102,6 +139,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!first) return
     setSelectedConditionId(conditionId)
     setDestinationId(first.id); setJourneyState('en-route')
+    broadcastJourney('en-route', first.id)
     const events: Array<[string, AuditEvent['tone']]> = [
       ...(options?.source === 'sos-voice' ? [[`SOS voice capture matched a fictional ${condition?.name ?? 'emergency'} scenario locally`, 'blue'] as [string, AuditEvent['tone']]] : []),
       [`${condition?.name ?? 'Emergency'} request created with simulated requirements`, 'blue'],
@@ -124,13 +162,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       : hospital)
     const first = recommendHospital(readyHospitals, scenario.requiredFacilities)
     if (!first) {
-      addAudit('Critical demo scenario could not find an eligible fictional hospital', 'red')
+      addAudit('Critical simulation scenario could not find an eligible fictional hospital', 'red')
       return
     }
     setHospitals(readyHospitals)
     setSelectedConditionId(scenario.id)
     setDestinationId(first.id)
     setJourneyState('en-route')
+    broadcastHospitalStatus('metro', { icuBeds: 1, cardiacSpecialist: true, erStatus: 'accepting' })
+    broadcastJourney('en-route', first.id)
     addAudit('Critical cardiac scenario started — fictional data only', 'red')
     addAudit(`${first.name} initially selected after capability and simulated ETA checks`, 'green')
     addAudit('Simulated ambulance journey started; human reroute approval remains required', 'amber')
@@ -138,11 +178,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => {
       const updatedHospitals = readyHospitals.map((hospital) => hospital.id === 'metro' ? { ...hospital, icuBeds: 0 } : hospital)
       setHospitals(updatedHospitals)
+      broadcastHospitalStatus('metro', { icuBeds: 0, cardiacSpecialist: true, erStatus: 'accepting' })
       if (supabase) void supabase.from('hospitals').update({ icu_beds: 0, updated_at: new Date().toISOString() }).eq('id', 'metro')
       addAudit('Metro Care Centre simulated ICU capacity changed to unavailable', 'red')
       const next = recommendHospital(updatedHospitals, scenario.requiredFacilities)
       if (first.id === 'metro' && next?.id && next.id !== 'metro') {
         setJourneyState('reroute-required')
+        broadcastJourney('reroute-required', first.id)
         addAudit(`${next.name} proposed as the next eligible fictional destination`, 'amber')
       }
     }, 3600)
@@ -151,11 +193,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateMetroStatus = (update: Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>) => {
     const updated = hospitals.map((hospital) => hospital.id === 'metro' ? { ...hospital, ...update } : hospital)
     setHospitals(updated)
+    broadcastHospitalStatus('metro', update)
     if (supabase) void supabase.from('hospitals').update({ icu_beds: update.icuBeds, cardiac_specialist: update.cardiacSpecialist, er_status: update.erStatus, updated_at: new Date().toISOString() }).eq('id', 'metro')
     addAudit(`Metro Care Centre status updated: ICU ${update.icuBeds}, ER ${update.erStatus}`)
     const next = recommendHospital(updated, requiredFacilities)
     if (journeyState === 'en-route' && destinationId === 'metro' && next?.id !== 'metro') {
       setJourneyState('reroute-required')
+      broadcastJourney('reroute-required', destinationId)
       if (supabase && activeIncidentId) void supabase.from('incidents').update({ journey_status: 'reroute-required' }).eq('id', activeIncidentId)
       addAudit('Destination reassessment triggered: Metro Care Centre is no longer eligible', 'red')
       if (next) addAudit(`${next.name} proposed as next eligible destination`, 'amber')
@@ -165,11 +209,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const confirmReroute = () => {
     if (!recommendation) return
     setDestinationId(recommendation.id); setJourneyState('rerouted')
+    broadcastJourney('rerouted', recommendation.id)
     if (supabase && activeIncidentId) void supabase.from('incidents').update({ journey_status: 'rerouted', destination_id: recommendation.id, simulated_eta_minutes: recommendation.etaMinutes }).eq('id', activeIncidentId)
     addAudit(`Updated destination confirmed: ${recommendation.name}`, 'green')
   }
-  const keepCurrentDestination = () => { setJourneyState('en-route'); addAudit('Current destination retained by simulated user', 'amber') }
+  const keepCurrentDestination = () => { setJourneyState('en-route'); broadcastJourney('en-route', destinationId); addAudit('Current destination retained by simulated user', 'amber') }
   const recordHospitalDecision = (accepted: boolean, reason = 'Resource constraint') => {
+    if (!accepted) {
+      const updated = hospitals.map((hospital) => hospital.id === 'metro' ? { ...hospital, erStatus: 'diverting' as const } : hospital)
+      const metro = updated.find((hospital) => hospital.id === 'metro')
+      setHospitals(updated)
+      if (metro) {
+        broadcastHospitalStatus('metro', { icuBeds: metro.icuBeds, cardiacSpecialist: metro.cardiacSpecialist, erStatus: metro.erStatus })
+        if (supabase) void supabase.from('hospitals').update({ er_status: 'diverting', updated_at: new Date().toISOString() }).eq('id', 'metro')
+      }
+      setJourneyState('reroute-required')
+      broadcastJourney('reroute-required', destinationId)
+    }
     if (supabase && activeIncidentId) void supabase.from('incidents').update({ journey_status: accepted ? 'accepted' : 'rejected' }).eq('id', activeIncidentId)
     addAudit(accepted ? 'Metro Care Centre accepted simulated patient request' : `Metro Care Centre rejected simulated patient request: ${reason}`, accepted ? 'green' : 'red')
   }
@@ -180,7 +236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
   const signUp = async (email: string, password: string, selectedRole: Exclude<Role, null>): Promise<AuthResult> => {
     if (!supabase) return { error: 'Connect Supabase in .env.local to create an account.' }
-    setAuthBusy(true); const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { role: selectedRole === 'coordinator' ? 'hospital_coordinator' : 'emergency_user', display_name: 'Demo user' } } }); setAuthBusy(false)
+    setAuthBusy(true); const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { role: selectedRole === 'coordinator' ? 'hospital_coordinator' : 'emergency_user', display_name: 'Simulation user' } } }); setAuthBusy(false)
     return { error: error?.message ?? null, message: data.session ? 'Account created.' : 'Account created. Check your email to confirm it.' }
   }
   const signOut = async () => { if (supabase) await supabase.auth.signOut(); setAuthUser(null); setRole(null); setActiveIncidentId(null) }

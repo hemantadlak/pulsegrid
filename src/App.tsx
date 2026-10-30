@@ -20,10 +20,14 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [sosVoiceOpen, setSosVoiceOpen] = useState(false)
+  const openSosVoiceCapture = () => {
+    setSosVoiceOpen(true)
+    window.dispatchEvent(new Event('pulsegrid:start-sos-voice'))
+  }
   if (!role) return <Suspense fallback={<AppLoader />}><LoginScreen /></Suspense>
   return <>
     <Helmet><title>{role === 'emergency' ? 'Emergency dashboard — PULSEGRID' : 'Hospital coordinator — PULSEGRID'}</title><meta name="description" content="PULSEGRID is a fictional emergency dispatch decision-support simulation." /><meta name="theme-color" content="#2563EB" /><link rel="canonical" href="https://pulsegrid-theta.vercel.app" /></Helmet>
-    <div className="sim-banner">PULSEGRID <span>·</span> Demo mode</div>
+    <div className="sim-banner">PULSEGRID <span>·</span> Simulation</div>
     <OfflineBanner />
     <Navbar onRequestSignOut={() => setSignOutOpen(true)} />
     <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -31,7 +35,7 @@ function AppContent() {
       <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard /> : <CoordinatorDashboard />}</Suspense>
     </motion.main>
     {role === 'emergency' && <>
-      <SOSButton onActivate={() => setSosVoiceOpen(true)} />
+      <SOSButton onActivate={openSosVoiceCapture} />
       <SOSVoiceDrawer open={sosVoiceOpen} onClose={() => setSosVoiceOpen(false)} onAllocate={(conditionId) => dispatch({ helper: true, conditionId, source: 'sos-voice' })} />
     </>}
     {signOutOpen && <ConfirmModal variant="signout" onClose={() => setSignOutOpen(false)} onConfirm={() => { void signOut(); setSignOutOpen(false) }} />}

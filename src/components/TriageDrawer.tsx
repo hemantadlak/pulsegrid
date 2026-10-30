@@ -36,7 +36,7 @@ export function TriageDrawer({ open, onClose, onSelectCondition }: TriageDrawerP
       <button className="drawer-close" onClick={onClose} aria-label="Close simulated symptom matcher"><X size={18} /></button>
     </div>
     <div className="triage-drawer-body">
-      <div className="assist-intro"><Bot size={18} /><p>This local demo matcher helps preselect a fictional condition. It is not a diagnosis or medical advice.</p></div>
+      <div className="assist-intro"><Bot size={18} /><p>This local simulation matcher helps preselect a fictional condition. It is not a diagnosis or medical advice.</p></div>
       <label htmlFor="symptom-description">Simulation input</label>
       <textarea id="symptom-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Example: chest discomfort and difficulty breathing" rows={5} />
       <button className="btn-primary triage-submit" onClick={analyze} disabled={!description.trim() || isAnalyzing}>{isAnalyzing ? 'Matching simulated scenario…' : <><Send size={15} /> Analyze simulated scenario</>}</button>
@@ -44,7 +44,7 @@ export function TriageDrawer({ open, onClose, onSelectCondition }: TriageDrawerP
       {matched && <div className="triage-result">
         <span className={`triage-severity severity-${matched.severity}`}>{matched.severity} simulation</span>
         <h3>{matched.name}</h3>
-        <p>Capability checklist used by the PULSEGRID demo:</p>
+        <p>Capability checklist used by the PULSEGRID simulation:</p>
         <ul>{requirements.map((item) => <li key={item}><CheckCircle2 size={14} /> {item}</li>)}</ul>
         <button className="btn-primary" onClick={useMatch}>Use this simulated condition</button>
       </div>}
