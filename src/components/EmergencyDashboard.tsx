@@ -4,6 +4,7 @@ import { useApp } from '../context'
 import { PulseMap } from './PulseMap'
 import { CONDITIONS } from '../conditions'
 import { DEMO_BLOOD_SUPPORT } from '../data'
+import { useCountdown } from '../hooks/useCountdown'
 
 type AmbulanceChoice = 'yes' | 'no' | null
 
@@ -15,6 +16,7 @@ export function EmergencyDashboard() {
   const [ambulanceChoice, setAmbulanceChoice] = useState<AmbulanceChoice>(null)
   const [supportNeed, setSupportNeed] = useState('')
   const [bloodOpen, setBloodOpen] = useState(false)
+  const countdown = useCountdown(7, 42, journeyState !== 'idle')
   const destination = assessments.find((hospital) => hospital.id === destinationId)
   const selectedCondition = CONDITIONS.find((condition) => condition.id === selectedConditionId)!
   const filteredConditions = useMemo(() => CONDITIONS.filter((condition) => condition.name.toLowerCase().includes(search.toLowerCase())), [search])
@@ -59,12 +61,12 @@ export function EmergencyDashboard() {
       </section>
 
       {journeyState === 'reroute-required' && recommendation && <section className="reroute-alert" role="alert"><div className="alert-heading"><AlertTriangle size={20} /> Destination reassessment required</div><p>Metro Care Centre no longer meets the simulated ICU requirement. {recommendation.name} is now the next eligible destination.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={confirmReroute}>Confirm updated destination</button><button className="btn-outline compact-btn" onClick={keepCurrentDestination}>Keep current destination</button></div></section>}
-      <section className="card map-card"><div className="map-caption"><span className="status-dot" /> OpenStreetMap demo view · destination: {destination?.name ?? 'Awaiting dispatch'}</div><PulseMap hospitals={hospitals} recommendedId={destinationId} /></section>
+      <section className="card map-card"><div className="map-caption"><span className="status-dot" /> OpenStreetMap demo view · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{journeyState !== 'idle' && <div className="countdown-card"><span>SIMULATED AMBULANCE ETA</span><strong>{countdown}</strong><small>countdown demo</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} /></section>
     </div>
 
     <div className="stack">
       <section className="card"><p className="eyebrow">Best eligible hospital · {selectedCondition.name}</p><h2>{recommendation?.name ?? 'Select an option to compare'}</h2>{recommendation ? <><div className="metric-row"><strong>{recommendation.etaMinutes} min</strong><span>simulated ETA</span></div><p className="muted-copy">{recommendation.reason}</p><div className="requirement-row">{selectedCondition.requiredFacilities.map((facility) => <span className="requirement-chip" key={facility}>{facility}</span>)}</div></> : <p className="muted-copy">Choose a condition to calculate eligible fictional hospitals.</p>}</section>
-      <section className="card"><p className="eyebrow">Hospital eligibility</p><div className="hospital-list">{assessments.map((hospital) => <div className={`hospital-row ${hospital.id === destinationId ? 'selected' : ''}`} key={hospital.id}><div><strong>{hospital.name}</strong><small>{hospital.etaMinutes} min simulated ETA</small></div><div className="hospital-reason"><span className={`badge ${hospital.eligible ? 'badge-green' : 'badge-red'}`}>{hospital.eligible ? 'Eligible' : 'Rejected'}</span><small>{hospital.reason}</small></div></div>)}</div></section>
+      <section className="card"><p className="eyebrow">Hospital eligibility</p><div className="hospital-list">{assessments.map((hospital) => <div className={`hospital-row ${hospital.eligible ? 'eligible-row' : ''} ${hospital.id === destinationId ? 'selected' : ''}`} key={hospital.id}><div><strong>{hospital.name}</strong><small>{hospital.etaMinutes} min simulated ETA</small></div><div className="hospital-reason"><span className={`badge ${hospital.eligible ? 'badge-green' : 'badge-red'}`}>{hospital.eligible ? 'Eligible' : 'Rejected'}</span><small>{hospital.reason}</small></div></div>)}</div></section>
       <section className="card"><p className="eyebrow">Simulation audit log</p>{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the demo.</p> : auditLog.slice(0, 7).map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div></div>)}<div className="simulation-note"><Info size={14} /> No real emergency calls, ambulances, patient data, hospital availability, blood, plasma, or prices are used.</div></section>
     </div>
   </div>

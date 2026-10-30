@@ -44,7 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addAudit(`${condition?.name ?? 'Emergency'} request created with simulated requirements`)
     addAudit(`${first.name} recommended: shortest eligible ETA`, 'green')
     addAudit(`Simulated ambulance unit assigned with required capability kit`, 'green')
-    if (options?.helper) addAudit('SOS support helper assigned to accompany the simulated ambulance', 'red')
+    if (options?.helper) addAudit('SOS support: 2 simulated helpers assigned to accompany the nearest ambulance', 'red')
     addAudit(`Journey started toward ${first.name}`, 'amber')
   }
 

@@ -19,7 +19,7 @@ export function CoordinatorDashboard() {
     updateMetroStatus({ icuBeds, cardiacSpecialist: specialistOn, erStatus })
     setSaved(true); setToast('Simulated hospital status updated'); window.setTimeout(() => { setSaved(false); setToast('') }, 2600)
   }
-  const resolveIncoming = (accepted: boolean) => { recordHospitalDecision(accepted, 'ICU capacity unavailable'); setIncoming(false); setToast(accepted ? 'Simulated patient accepted — preparing bay' : 'Simulated patient rejected due to lack of resources'); window.setTimeout(() => setToast(''), 2600) }
+  const resolveIncoming = (accepted: boolean) => { recordHospitalDecision(accepted, 'ICU capacity unavailable'); setIncoming(false); setToast(accepted ? 'Thank you! The patient is arriving in a few minutes. Please arrange all facilities.' : 'No worries — the patient has been rerouted.'); window.setTimeout(() => setToast(''), 4200) }
 
   return <div className="grid-50-50">
     <div className="stack">
