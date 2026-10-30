@@ -6,11 +6,20 @@ import { t } from '../i18n'
 import type { Role } from '../context'
 
 export function LoginScreen() {
-  const { setRole, lang } = useApp()
+  const { setRole, lang, backendReady, authBusy, signIn, signUp } = useApp()
   const [selected, setSelected] = useState<Role>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
 
   const handleEnter = () => {
     if (selected) setRole(selected)
+  }
+  const handleAuth = async (mode: 'sign-in' | 'sign-up') => {
+    if (!selected || !email || !password) { setAuthMessage('Select a role, email, and password first.'); return }
+    const result = mode === 'sign-in' ? await signIn(email, password) : await signUp(email, password, selected)
+    setAuthMessage(result.error ?? result.message ?? '')
+    if (!result.error && mode === 'sign-in') setRole(selected)
   }
 
   return (
@@ -99,6 +108,14 @@ export function LoginScreen() {
           {t('enterDemoMode', lang)}
         </button>
 
+        {backendReady && <div className="auth-panel">
+          <p>Account access</p>
+          <input className="condition-search" type="email" autoComplete="email" placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input className="condition-search" type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <div className="button-row"><button className="btn-outline compact-btn" disabled={authBusy} onClick={() => void handleAuth('sign-in')}>Sign in</button><button className="btn-primary compact-btn" disabled={authBusy} onClick={() => void handleAuth('sign-up')}>Create account</button></div>
+          {authMessage && <p className="auth-message">{authMessage}</p>}
+        </div>}
+
         {/* Fine print */}
         <p
           style={{
@@ -108,7 +125,7 @@ export function LoginScreen() {
             marginTop: 12,
           }}
         >
-          {t('noRealData', lang)}
+          {backendReady ? 'Account mode uses only fictional demo data.' : t('noRealData', lang)}
         </p>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { Logo } from './Logo'
 import { t } from '../i18n'
 
 export function Navbar() {
-  const { role, setRole, lang, setLang } = useApp()
+  const { role, signOut, lang, setLang } = useApp()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   const roleLabel =
@@ -62,7 +62,7 @@ export function Navbar() {
         {role && (
           <button
             className="btn-outline"
-            onClick={() => setRole(null)}
+            onClick={() => void signOut()}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <LogOut size={14} />
