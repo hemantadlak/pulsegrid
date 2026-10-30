@@ -3,6 +3,7 @@ import { Minus, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useApp } from '../context'
 import { ConfirmModal } from './ui/ConfirmModal'
+import { PreparationChecklist } from './PreparationChecklist'
 
 export function CoordinatorDashboard() {
   const { hospitals, auditLog, updateMetroStatus, recordHospitalDecision } = useApp()
@@ -52,6 +53,7 @@ export function CoordinatorDashboard() {
         <p>For the key demo, set ICU beds to <strong>0</strong> and save while the Emergency User journey is active.</p>
       </section>
       {incoming && <section className="card incoming-card"><p className="eyebrow">Incoming simulated patient</p><h3>Cardiac care · Demo ambulance · ETA 7 min</h3><p className="muted-copy">Preparation required: cardiac ICU, specialist, defibrillator, and emergency room readiness.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={() => setPendingDecision('accept')}>Accept simulated patient</button><button className="btn-outline compact-btn" onClick={() => setPendingDecision('reject')}>Reject — lack of resources</button></div></section>}
+      {incoming && <PreparationChecklist />}
     </div>
 
     <section id="eventlog" className="card">

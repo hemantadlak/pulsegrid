@@ -18,6 +18,7 @@ interface AppContextType {
   selectedConditionId: string; setSelectedConditionId: (id: string) => void
   journeyState: JourneyState; destinationId: string | null; auditLog: AuditEvent[]
   dispatch: (options?: { helper?: boolean }) => void
+  startCriticalScenario: () => void
   updateMetroStatus: (update: Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>) => void
   confirmReroute: () => void; keepCurrentDestination: () => void
   recordHospitalDecision: (accepted: boolean, reason?: string) => void
@@ -111,6 +112,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else events.forEach(([text, tone]) => addAudit(text, tone))
   }
 
+  const startCriticalScenario = () => {
+    const scenario = CONDITIONS.find((item) => item.id === 'cardiac-arrest')!
+    const readyHospitals = hospitals.map((hospital) => hospital.id === 'metro'
+      ? { ...hospital, icuBeds: 1, cardiacSpecialist: true, erStatus: 'accepting' as const }
+      : hospital)
+    const first = recommendHospital(readyHospitals, scenario.requiredFacilities)
+    if (!first) {
+      addAudit('Critical demo scenario could not find an eligible fictional hospital', 'red')
+      return
+    }
+    setHospitals(readyHospitals)
+    setSelectedConditionId(scenario.id)
+    setDestinationId(first.id)
+    setJourneyState('en-route')
+    addAudit('Critical cardiac scenario started — fictional data only', 'red')
+    addAudit(`${first.name} initially selected after capability and simulated ETA checks`, 'green')
+    addAudit('Simulated ambulance journey started; human reroute approval remains required', 'amber')
+
+    window.setTimeout(() => {
+      const updatedHospitals = readyHospitals.map((hospital) => hospital.id === 'metro' ? { ...hospital, icuBeds: 0 } : hospital)
+      setHospitals(updatedHospitals)
+      if (supabase) void supabase.from('hospitals').update({ icu_beds: 0, updated_at: new Date().toISOString() }).eq('id', 'metro')
+      addAudit('Metro Care Centre simulated ICU capacity changed to unavailable', 'red')
+      const next = recommendHospital(updatedHospitals, scenario.requiredFacilities)
+      if (first.id === 'metro' && next?.id && next.id !== 'metro') {
+        setJourneyState('reroute-required')
+        addAudit(`${next.name} proposed as the next eligible fictional destination`, 'amber')
+      }
+    }, 3600)
+  }
+
   const updateMetroStatus = (update: Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>) => {
     const updated = hospitals.map((hospital) => hospital.id === 'metro' ? { ...hospital, ...update } : hospital)
     setHospitals(updated)
@@ -148,7 +180,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
   const signOut = async () => { if (supabase) await supabase.auth.signOut(); setAuthUser(null); setRole(null); setActiveIncidentId(null) }
 
-  return <AppContext.Provider value={{ role, setRole, lang, setLang, hospitals, assessments, recommendation, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, dispatch, updateMetroStatus, confirmReroute, keepCurrentDestination, recordHospitalDecision, authUser, backendReady: isSupabaseConfigured, authBusy, signIn, signUp, signOut }}>{children}</AppContext.Provider>
+  return <AppContext.Provider value={{ role, setRole, lang, setLang, hospitals, assessments, recommendation, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, dispatch, startCriticalScenario, updateMetroStatus, confirmReroute, keepCurrentDestination, recordHospitalDecision, authUser, backendReady: isSupabaseConfigured, authBusy, signIn, signUp, signOut }}>{children}</AppContext.Provider>
 }
 
 export function useApp() {

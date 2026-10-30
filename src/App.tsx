@@ -8,6 +8,7 @@ import { Sidebar } from './components/Sidebar'
 import { AppLoader } from './components/ui/AppLoader'
 import { ConfirmModal } from './components/ui/ConfirmModal'
 import { OfflineBanner } from './components/ui/OfflineBanner'
+import { SOSButton } from './components/ui/SOSButton'
 const LoginScreen = lazy(async () => ({ default: (await import('./components/LoginScreen')).LoginScreen }))
 const EmergencyDashboard = lazy(async () => ({ default: (await import('./components/EmergencyDashboard')).EmergencyDashboard }))
 const CoordinatorDashboard = lazy(async () => ({ default: (await import('./components/CoordinatorDashboard')).CoordinatorDashboard }))
@@ -27,7 +28,7 @@ function AppContent() {
     <motion.main className="main-layout" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
       <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard /> : <CoordinatorDashboard />}</Suspense>
     </motion.main>
-    {role === 'emergency' && <button className="sos-button" aria-label="Emergency SOS — request immediate simulated help" onClick={() => dispatch({ helper: true })} title="Start simulated SOS support">SOS</button>}
+    {role === 'emergency' && <SOSButton onActivate={() => dispatch({ helper: true })} />}
     {signOutOpen && <ConfirmModal variant="signout" onClose={() => setSignOutOpen(false)} onConfirm={() => { void signOut(); setSignOutOpen(false) }} />}
   </>
 }

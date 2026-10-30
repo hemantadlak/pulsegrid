@@ -6,6 +6,8 @@ import { CONDITIONS } from '../conditions'
 import { DEMO_BLOOD_SUPPORT } from '../data'
 import { useCountdown } from '../hooks/useCountdown'
 import { ConfirmModal } from './ui/ConfirmModal'
+import { SimulationCommandDeck } from './SimulationCommandDeck'
+import { TriageDrawer } from './TriageDrawer'
 
 type AmbulanceChoice = 'yes' | 'no' | null
 type Point = [number, number]
@@ -29,6 +31,7 @@ export function EmergencyDashboard() {
   const [userLocation, setUserLocation] = useState<Point | undefined>()
   const [locationStatus, setLocationStatus] = useState('')
   const [confirmDispatchOpen, setConfirmDispatchOpen] = useState(false)
+  const [triageOpen, setTriageOpen] = useState(false)
   const destination = assessments.find((hospital) => hospital.id === destinationId)
   const selectedCondition = CONDITIONS.find((condition) => condition.id === selectedConditionId)!
   const filteredConditions = useMemo(() => CONDITIONS.filter((condition) => condition.name.toLowerCase().includes(search.toLowerCase())), [search])
@@ -63,6 +66,7 @@ export function EmergencyDashboard() {
 
   return <div className="grid-58-42">
     <div className="stack">
+      <SimulationCommandDeck onOpenAssist={() => setTriageOpen(true)} />
       <section className="card">
         <p className="eyebrow">Step 1 · simulated emergency triage</p>
         <h1>What is the medical concern?</h1>
@@ -103,6 +107,7 @@ export function EmergencyDashboard() {
       <section id="alerts" className="card"><p className="eyebrow">Activity log</p>{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the demo.</p> : <>{visibleAudit.map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Demo mode</small></div></div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}<div className="simulation-note"><Info size={14} /> Demo mode only. It cannot call emergency services or access real hospital, blood, or price information.</div></section>
       <section id="settings-panel" className="card"><p className="eyebrow">Display settings</p><p className="muted-copy">Choose your preferred interface language.</p><div className="button-row"><button className={`btn-outline compact-btn ${lang === 'en' ? 'active-option' : ''}`} onClick={() => setLang('en')}>English</button><button className={`btn-outline compact-btn ${lang === 'hi' ? 'active-option' : ''}`} onClick={() => setLang('hi')}>हिंदी</button></div></section>
     </div>
+    <TriageDrawer open={triageOpen} onClose={() => setTriageOpen(false)} onSelectCondition={chooseCondition} />
     {confirmDispatchOpen && <ConfirmModal variant="ambulance" onClose={() => setConfirmDispatchOpen(false)} onConfirm={confirmDispatch} />}
   </div>
 }
