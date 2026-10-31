@@ -1,5 +1,5 @@
-import { Bell, LogOut, X } from 'lucide-react'
-import { useState } from 'react'
+import { Bell, LogOut } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context'
 import { Logo } from './Logo'
 import { t } from '../i18n'
@@ -8,7 +8,13 @@ import { GlobalSearch } from './layout/GlobalSearch'
 
 export function Navbar({ onRequestSignOut }: { onRequestSignOut: () => void }) {
   const { role, lang, setLang } = useApp()
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(3)
+
+  useEffect(() => {
+    const clearUnread = () => setUnreadNotifications(0)
+    window.addEventListener('pulsegrid:coordinator-alerts-read', clearUnread)
+    return () => window.removeEventListener('pulsegrid:coordinator-alerts-read', clearUnread)
+  }, [])
 
   const roleLabel =
     role === 'emergency'
@@ -42,10 +48,7 @@ export function Navbar({ onRequestSignOut }: { onRequestSignOut: () => void }) {
           </button>
         </div>
 
-        {role === 'coordinator' && <>
-          <button className="notification-bell" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications — 1 unread"><Bell size={18} /><span>1</span></button>
-          {notificationsOpen && <div className="notification-dropdown"><div className="notification-title">Incoming simulated patient <button onClick={() => setNotificationsOpen(false)}><X size={15} /></button></div><strong>Cardiac care request</strong><small>AMB-SIM-07 · simulated ETA 7 min</small><p>Review the Incoming simulated patient card in the coordinator dashboard.</p></div>}
-        </>}
+        {role === 'coordinator' && <button className={`notification-bell ${unreadNotifications ? 'has-unread' : ''}`} onClick={() => window.dispatchEvent(new Event('pulsegrid:open-coordinator-alerts'))} aria-label={`Notifications — ${unreadNotifications} unread`}><Bell size={18} />{unreadNotifications > 0 && <span>{unreadNotifications}</span>}</button>}
 
         {/* Role badge */}
         {role && (
