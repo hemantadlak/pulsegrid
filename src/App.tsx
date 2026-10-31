@@ -31,8 +31,8 @@ function AppContent() {
     <OfflineBanner />
     <Navbar onRequestSignOut={() => setSignOutOpen(true)} />
     <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-    <motion.main className="main-layout" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
-      <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard /> : <CoordinatorDashboard />}</Suspense>
+    <motion.main className={`main-layout workspace-main view-${activeTab}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
+      <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard activeTab={activeTab} /> : <CoordinatorDashboard activeTab={activeTab} />}</Suspense>
     </motion.main>
     {role === 'emergency' && <>
       <SOSButton onActivate={openSosVoiceCapture} />

@@ -3,6 +3,7 @@ import {
   AlertCircle,
   AlertTriangle,
   BedDouble,
+  Bell,
   Calendar,
   Check,
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
   Plus,
   RefreshCw,
   Save,
+  Settings,
   Stethoscope,
   Truck,
   UserCheck,
@@ -99,7 +101,7 @@ function formatDuration(totalSeconds: number) {
   return `${mins}:${secs}`
 }
 
-export function CoordinatorDashboard() {
+export function CoordinatorDashboard({ activeTab = 'dashboard' }: { activeTab?: string }) {
   const { hospitals, alerts: sharedAlerts, selectedConditionId, destinationId, journeyState, updateMetroStatus, recordHospitalDecision } = useApp()
   const metro = hospitals.find((hospital) => hospital.id === 'metro')!
   const [icuBeds, setIcuBeds] = useState(metro.icuBeds)
@@ -275,7 +277,15 @@ export function CoordinatorDashboard() {
     </article>
   }
 
-  return <div className="coordinator-board">
+  const pageCopy = activeTab === 'capacity'
+    ? { title: 'Capacity control', description: 'Adjust fictional resources and hospital availability.' }
+    : activeTab === 'eventlog'
+      ? { title: 'Event log', description: 'Review fictional activity and coordinator notifications.' }
+      : activeTab === 'settings'
+        ? { title: 'Workspace settings', description: 'Review display and simulation workspace preferences.' }
+        : { title: 'Metro Care Centre', description: 'Manage simulated capacity, case preparation, and alerts in one place.' }
+
+  return <div className={`coordinator-board coordinator-workspace active-view-${activeTab}`}>
     <header className="coordinator-page-heading">
       <div><p className="eyebrow">Hospital coordinator · fictional operations view</p><h1>Metro Care Centre</h1><p>Manage simulated capacity, case preparation, and alerts in one place.</p></div>
       <div className="coordinator-heading-meta"><span className="coordinator-live-dot" />Live simulation sync</div>
@@ -283,14 +293,16 @@ export function CoordinatorDashboard() {
 
     <section className={`coordinator-status-banner status-${erStatus}`} aria-live="polite"><StatusIcon size={21} /><div><strong>{statusConfig.label}</strong><span>{statusConfig.description}</span></div></section>
 
-    <section className="coordinator-stat-grid" aria-label="Hospital statistics">
+    <section className="coordinator-page-intro"><p className="eyebrow">{activeTab === 'dashboard' ? 'Overview' : 'Workspace'}</p><h2>{pageCopy.title}</h2><p>{pageCopy.description}</p></section>
+
+    <section className="coordinator-stat-grid coordinator-section section-dashboard" aria-label="Hospital statistics">
       <StatCard label="ICU Beds" value={icuBeds} sublabel="of 10 total" tone="green" icon={<BedDouble size={22} />} progress={`${Math.min(100, icuBeds * 10)}%`} />
       <StatCard label="Vents" value={ventilators} sublabel="of 8 total" tone="blue" icon={<Wind size={22} />} progress={`${Math.min(100, ventilators * 12.5)}%`} />
       <StatCard label="Incoming" value={incomingCards.length} tone="red" icon={<AlertCircle size={22} />} progress={incomingCards.length ? '78%' : '0%'} pulse={incomingCards.length > 0} />
       <StatCard label="Today" value={todayCount} tone="amber" icon={<Calendar size={22} />} progress={`${Math.min(100, todayCount * 5)}%`} />
     </section>
 
-    <section id="coordinator-kanban" className="coordinator-kanban" aria-label="Fictional patient workflow board">
+    <section id="coordinator-kanban" className="coordinator-kanban coordinator-section section-dashboard" aria-label="Fictional patient workflow board">
       {boardColumns.map((column) => <section
         className={`kanban-column column-${column.id} ${dragTarget === column.id ? 'drop-active' : ''}`}
         key={column.id}
@@ -304,7 +316,7 @@ export function CoordinatorDashboard() {
     </section>
 
     <section className="coordinator-bottom-grid">
-      <section id="capacity" className="coordinator-control-card">
+      <section id="capacity" className="coordinator-control-card coordinator-section section-capacity">
         <div className="control-card-heading"><div><h2>System Controls</h2><p>Quick adjustments</p></div><Stethoscope size={19} /></div>
         <div className="system-control-row"><div className="system-control-label"><span className="icon-container icon-sm icon-green"><UserCheck size={16} /></span><div><strong>Specialist On-Duty</strong><small>Fictional cardiology coordinator</small></div></div><label className="toggle-switch toggle-switch-large"><input type="checkbox" checked={specialistOn} onChange={(event) => setSpecialistOn(event.target.checked)} /><span className="toggle-slider" /></label></div>
         <div className="system-control-row icu-control"><div className="system-control-label"><span className="icon-container icon-sm icon-blue"><BedDouble size={16} /></span><div><strong>ICU Beds Available</strong><small>Fictional capacity only</small></div></div><div className="counter-wrap coordinator-counter"><button className="counter-btn" onClick={() => bumpCounter(Math.max(0, icuBeds - 1))} aria-label="Decrease ICU beds"><Minus size={17} /></button><strong className="counter-value" key={counterKey}>{icuBeds}</strong><button className="counter-btn counter-plus" onClick={() => bumpCounter(Math.min(10, icuBeds + 1))} aria-label="Increase ICU beds"><Plus size={17} /></button></div></div>
@@ -313,13 +325,26 @@ export function CoordinatorDashboard() {
         <p className="saved-time">{saved ? 'Saved just now' : 'Changes remain local until saved'}</p>
       </section>
 
-      <section className="coordinator-ai-card">
+      <section className="coordinator-ai-card coordinator-section section-dashboard">
         <div className="ai-card-heading"><h2>✦ AI Triage Assessment</h2><span>+ AI Assessment</span></div>
         <p className="ai-typewriter">{aiText}<i /></p>
         <div className="ai-action-chips">{['Prepare Cath Lab', 'Alert simulation team', 'Ready Defibrillator'].map((action, index) => <button key={action} className={`ai-chip chip-${index} ${preparedActions.includes(action) ? 'complete' : ''}`} onClick={() => togglePreparedAction(action)}>{preparedActions.includes(action) && <CheckCircle2 size={13} />}{action}</button>)}</div>
         <button className="refresh-ai" onClick={refreshAi}><RefreshCw size={13} />Refresh AI</button>
         <p className="ai-disclaimer">Rule-based fictional preparedness suggestions only — not clinical guidance.</p>
       </section>
+    </section>
+
+    <section id="eventlog" className="coordinator-event-card coordinator-section section-eventlog">
+      <div className="control-card-heading"><div><h2>Coordinator Event Log</h2><p>Fictional updates from dispatch and hospital operations</p></div><Bell size={19} /></div>
+      <div className="coordinator-event-list">{coordinatorAlerts.map((alert) => <article className={`coordinator-event-row alert-${alert.kind} ${alert.read ? 'is-read' : ''}`} key={alert.id}><span>{alertIcon(alert.kind)}</span><div><strong>{alert.title}</strong><p>{alert.detail}</p></div><time>{alert.time}</time><button onClick={() => markAlertRead(alert.id)}>{alert.read ? 'Read' : 'Mark read'}</button></article>)}</div>
+      <button className="show-more-btn history-btn" onClick={markAllRead}>Mark all notifications read</button>
+    </section>
+
+    <section className="coordinator-settings-card coordinator-section section-settings">
+      <div className="control-card-heading"><div><h2>Interface Settings</h2><p>Display and simulation workspace preferences</p></div><Settings size={19} /></div>
+      <div className="settings-option"><div><strong>Language</strong><p>Use the English / Hindi switch in the top header to update this workspace.</p></div><span className="badge badge-blue">Header control</span></div>
+      <div className="settings-option"><div><strong>Simulation data</strong><p>This workspace uses fictional hospital, capacity, and case information only.</p></div><span className="badge badge-green">Enabled</span></div>
+      <div className="settings-option"><div><strong>Notifications</strong><p>Open the bell in the header to review and acknowledge coordinator alerts.</p></div><span className="badge badge-amber">{unreadCount} unread</span></div>
     </section>
 
     {alertPanelOpen && <><button className="alert-backdrop" aria-label="Close alerts" onClick={() => setAlertPanelOpen(false)} /><aside className="coordinator-alert-panel" aria-label="Alerts and notifications"><div className="alert-panel-heading"><div><h2>Alerts &amp; Notifications</h2><button onClick={markAllRead}>Mark all read</button></div><button className="alert-panel-close" onClick={() => setAlertPanelOpen(false)} aria-label="Close alerts"><X size={18} /></button></div><div className="alert-tabs">{(['all', 'critical', 'info'] as const).map((tab) => <button key={tab} className={alertFilter === tab ? 'active' : ''} onClick={() => setAlertFilter(tab)}>{tab === 'all' ? 'All' : tab === 'critical' ? 'Critical' : 'Info'}</button>)}</div><div className="alert-list">{visibleAlerts.map((alert) => <article key={alert.id} className={`alert-panel-item alert-${alert.kind} ${alert.read ? 'is-read' : ''}`} onClick={() => markAlertRead(alert.id)}><div className="alert-item-top"><span>{alertIcon(alert.kind)}</span><strong>{alert.title}</strong><time>{alert.time}</time></div><p>{alert.detail}</p><div className="alert-item-actions"><button onClick={(event) => { event.stopPropagation(); markAlertRead(alert.id) }}>Acknowledge</button><button onClick={(event) => { event.stopPropagation(); document.getElementById('coordinator-kanban')?.scrollIntoView({ behavior: 'smooth' }); setAlertPanelOpen(false) }}>View case</button></div></article>)}</div></aside></>}

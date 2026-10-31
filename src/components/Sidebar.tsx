@@ -26,30 +26,22 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   ]
 
   const navItems = role === 'coordinator' ? coordinatorNav : emergencyNav
-  const navigate = (id: string) => {
-    onTabChange(id)
-    const targetId = id === 'capacity' ? 'capacity' : id === 'eventlog' ? 'eventlog' : id === 'settings' ? 'settings-panel' : id
-    window.setTimeout(() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
-  }
-
   return (
-    <aside className="sidebar">
-      <div>
+    <nav className="top-navigation" aria-label="Workspace navigation">
+      <div className="top-navigation-inner">
         {navItems.map(({ id, icon: Icon, label }) => (
           <button
             type="button"
             key={id}
-            className={`sidebar-nav-item${activeTab === id ? ' active' : ''}`}
-            onClick={() => navigate(id)}
+            className={`top-nav-item${activeTab === id ? ' active' : ''}`}
+            onClick={() => onTabChange(id)}
+            aria-current={activeTab === id ? 'page' : undefined}
           >
-            <Icon size={16} />
+            <Icon size={17} strokeWidth={2.25} />
             <span>{label}</span>
           </button>
         ))}
       </div>
-      <div style={{ padding: '0 20px', color: 'var(--text-secondary)', fontSize: 11 }}>
-        PULSEGRID · Simulation
-      </div>
-    </aside>
+    </nav>
   )
 }
