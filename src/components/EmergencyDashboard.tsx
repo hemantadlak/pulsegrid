@@ -18,7 +18,7 @@ const conditionIcons: Record<string, LucideIcon> = {
   allergic: Activity, fracture: Bone, diabetic: Activity, childbirth: Stethoscope,
 }
 
-export function EmergencyDashboard({ activeTab = 'dashboard' }: { activeTab?: string }) {
+export function EmergencyDashboard({ activeTab = 'dashboard', onNavigate }: { activeTab?: string; onNavigate?: (tab: string) => void }) {
   const { assessments, recommendation, hospitals, selectedConditionId, setSelectedConditionId, journeyState, destinationId, auditLog, alerts, dispatch, confirmReroute, keepCurrentDestination, lang, setLang } = useApp()
   const [loading, setLoading] = useState(false)
   const [requested, setRequested] = useState(false)
@@ -69,10 +69,10 @@ export function EmergencyDashboard({ activeTab = 'dashboard' }: { activeTab?: st
     <div className="stack">
       <div className="workspace-section section-dashboard"><SimulationCommandDeck onOpenAssist={() => setTriageOpen(true)} /></div>
       <section className="card workspace-section section-dispatch">
-        <p className="eyebrow">Step 1 · simulated emergency triage</p>
+        <p className="eyebrow">Step 1 · emergency intake</p>
         <h1>What is the medical concern?</h1>
-        <p className="muted-copy">Choose a simulated condition. PULSEGRID checks capability first, then simulated ETA.</p>
-        <input className="condition-search" placeholder="Search simulated conditions" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <p className="muted-copy">Choose a fictional condition. PULSEGRID checks capability first, then estimated travel time.</p>
+        <input className="condition-search" placeholder="Search conditions" value={search} onChange={(event) => setSearch(event.target.value)} />
         <div className="condition-grid">
           {visibleConditions.map((condition) => { const ConditionIcon = conditionIcons[condition.id] ?? Stethoscope; return <button key={condition.id} className={`condition-card ${condition.id === selectedConditionId ? `severity-${condition.severity}` : ''}`} onClick={() => chooseCondition(condition.id)}>
             <ConditionIcon size={17} /><span>{condition.name}</span><small>{condition.severity}</small>
@@ -81,14 +81,14 @@ export function EmergencyDashboard({ activeTab = 'dashboard' }: { activeTab?: st
         {!search && filteredConditions.length > 6 && <button className="show-more-btn" onClick={() => setShowAllConditions((show) => !show)}>{showAllConditions ? 'Show fewer conditions' : `Show ${filteredConditions.length - 6} more conditions`}</button>}
 
         <div className="choice-panel">
-          <div><strong>Do you need a simulated ambulance?</strong><small>For this prototype only — no real ambulance is contacted.</small></div>
+          <div><strong>Do you need an ambulance?</strong><small>Training workspace only — no real ambulance is contacted.</small></div>
           <div className="button-row"><button className={`choice-btn ${ambulanceChoice === 'yes' ? 'selected' : ''}`} onClick={chooseAmbulance}>Yes, assign ambulance</button><button className={`choice-btn ${ambulanceChoice === 'no' ? 'selected' : ''}`} onClick={() => setAmbulanceChoice('no')}>No, show support options</button></div>{locationStatus && ambulanceChoice === 'yes' && <p className="location-status">{locationStatus}</p>}
         </div>
 
         {ambulanceChoice === 'yes' && <>
-          <div className="ambulance-summary"><Siren size={18} /><div><strong>Nearest suitable simulated ambulance</strong><small>Unit P-14 · paramedic, oxygen, monitoring, and condition-matched capability kit</small></div></div>
+          <div className="ambulance-summary"><Siren size={18} /><div><strong>Nearest suitable training unit</strong><small>Fictional unit · paramedic, oxygen, monitoring, and condition-matched capability kit</small></div></div>
           <button id="dispatch-btn" className="btn-danger" onClick={requestDispatch} disabled={loading || requested}>
-            {loading ? 'Assigning simulated ambulance…' : requested ? 'Simulated journey started' : 'Assign simulated ambulance'}
+            {loading ? 'Assigning training unit…' : requested ? 'Journey started' : 'Assign training unit'}
           </button>
         </>}
 
@@ -99,7 +99,7 @@ export function EmergencyDashboard({ activeTab = 'dashboard' }: { activeTab?: st
       </section>
 
       {journeyState === 'reroute-required' && recommendation && <section className="reroute-alert workspace-section section-dispatch" role="alert"><div className="alert-heading"><AlertTriangle size={20} /> Destination reassessment required</div><p>Metro Care Centre no longer meets the simulated ICU requirement. {recommendation.name} is now the next eligible destination.</p><div className="button-row"><button className="btn-primary compact-btn" onClick={confirmReroute}>Confirm updated destination</button><button className="btn-outline compact-btn" onClick={keepCurrentDestination}>Keep current destination</button></div></section>}
-      <section id="dispatch" className="card map-card workspace-section section-dispatch"><div className="map-caption"><span className="status-dot" /> Traffic-aware simulation route · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{activeJourney && <div className="countdown-card"><span>AMBULANCE ETA</span><strong>{countdown}</strong><small>active simulation route</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} userLocation={userLocation} journeyActive={activeJourney} /></section>
+      <section id="dispatch" className="card map-card workspace-section section-dispatch"><div className="map-caption"><span className="status-dot" /> Training route · destination: {destination?.name ?? 'Awaiting dispatch'}</div>{activeJourney && <div className="countdown-card"><span>AMBULANCE ETA</span><strong>{countdown}</strong><small>active training route</small></div>}<PulseMap hospitals={hospitals} recommendedId={destinationId} userLocation={userLocation} journeyActive={activeJourney} /></section>
     </div>
 
     <div className="stack">
@@ -108,7 +108,7 @@ export function EmergencyDashboard({ activeTab = 'dashboard' }: { activeTab?: st
       <section id="alerts" className="card workspace-section section-alerts"><p className="eyebrow">Live simulation activity</p>{emergencyAlerts.length > 0 && <div className="live-alert-list" aria-live="polite">{emergencyAlerts.map((alert) => <div className="live-alert-item" key={alert.id}><span className={`audit-bar audit-${alert.tone}`} /><div><strong>{alert.text}</strong><small>{alert.time} · Simulation</small></div></div>)}</div>}{auditLog.length === 0 ? <p className="muted-copy">Actions will appear here during the simulation.</p> : <>{visibleAudit.map((event) => <div className="audit-item" key={event.id}><span className={`audit-bar audit-${event.tone}`} /><div><strong>{event.text}</strong><small>{event.time} · Simulation</small></div></div>)}{auditLog.length > 3 && <button className="show-more-btn history-btn" onClick={() => setShowFullHistory((show) => !show)}>{showFullHistory ? 'Show recent activity' : `Show full history (${auditLog.length})`}</button>}</>}<div className="simulation-note"><Info size={14} /> Simulation only. It cannot call emergency services or access real hospital, blood, or price information.</div></section>
       <section id="settings-panel" className="card workspace-section section-settings"><p className="eyebrow">Display settings</p><p className="muted-copy">Choose your preferred interface language.</p><div className="button-row"><button className={`btn-outline compact-btn ${lang === 'en' ? 'active-option' : ''}`} onClick={() => setLang('en')}>English</button><button className={`btn-outline compact-btn ${lang === 'hi' ? 'active-option' : ''}`} onClick={() => setLang('hi')}>हिंदी</button></div></section>
     </div>
-    <TriageDrawer open={triageOpen} onClose={() => setTriageOpen(false)} onSelectCondition={chooseCondition} />
+    <TriageDrawer open={triageOpen} onClose={() => setTriageOpen(false)} onSelectCondition={(conditionId) => { chooseCondition(conditionId); onNavigate?.('dispatch') }} />
     {confirmDispatchOpen && <ConfirmModal variant="ambulance" onClose={() => setConfirmDispatchOpen(false)} onConfirm={confirmDispatch} />}
   </div>
 }

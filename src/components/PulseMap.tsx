@@ -66,6 +66,6 @@ export function PulseMap({ hospitals, recommendedId, userLocation = fictionalLoc
     {hospitals.map((hospital) => <Marker key={hospital.id} position={[hospital.lat, hospital.lng]} icon={hospitalIcon(hospital, hospital.id === recommendedId)}><Popup><strong>{hospital.name}</strong><br />Estimated route: {hospital.etaMinutes} min<br />ICU beds: {hospital.icuBeds}</Popup></Marker>)}
     {destination && <Polyline positions={hospitalRoute} pathOptions={{ color: '#2563eb', weight: 5, opacity: .88 }} />}
     {journeyActive && <Polyline positions={journeyRoute} pathOptions={{ color: '#ef4444', weight: 5, dashArray: '10 7' }} />}
-    <Marker position={ambulancePosition} icon={ambulanceIcon}><Popup>{journeyActive ? 'Simulation ambulance in motion' : 'Simulation ambulance available nearby'}</Popup></Marker>
+    <Marker position={ambulancePosition} icon={ambulanceIcon}><Popup>{journeyActive ? 'Fictional ambulance in motion' : 'Fictional ambulance available nearby'}</Popup></Marker>
   </MapContainer>
 }

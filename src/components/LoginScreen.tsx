@@ -125,7 +125,7 @@ export function LoginScreen() {
             marginTop: 12,
           }}
         >
-          {backendReady ? 'Account mode uses only fictional simulation data.' : t('noRealData', lang)}
+          {backendReady ? 'Account mode uses only fictional training data.' : t('noRealData', lang)}
         </p>
       </div>
     </div>

@@ -16,7 +16,7 @@ type DatabaseHospital = { id: string; name: string; eta_minutes: number; icu_bed
 type SharedHospitalStatus = Pick<Hospital, 'icuBeds' | 'cardiacSpecialist' | 'erStatus'>
 type LiveSyncEvent =
   | { type: 'hospital-status'; hospitalId: string; status: SharedHospitalStatus }
-  | { type: 'journey'; journeyState: JourneyState; destinationId: string | null }
+  | { type: 'journey'; journeyState: JourneyState; destinationId: string | null; conditionId?: string }
   | { type: 'audit'; event: AuditEvent }
   | { type: 'alert'; alert: SimulationAlert }
 
@@ -75,8 +75,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     syncChannelRef.current?.postMessage({ type: 'alert', alert } satisfies LiveSyncEvent)
   }
 
-  const broadcastJourney = (nextJourneyState: JourneyState, nextDestinationId: string | null) => {
-    syncChannelRef.current?.postMessage({ type: 'journey', journeyState: nextJourneyState, destinationId: nextDestinationId } satisfies LiveSyncEvent)
+  const broadcastJourney = (nextJourneyState: JourneyState, nextDestinationId: string | null, conditionId = selectedConditionId) => {
+    syncChannelRef.current?.postMessage({ type: 'journey', journeyState: nextJourneyState, destinationId: nextDestinationId, conditionId } satisfies LiveSyncEvent)
   }
 
   const broadcastHospitalStatus = (hospitalId: string, status: SharedHospitalStatus) => {
@@ -94,6 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (data.type === 'journey') {
         setJourneyState(data.journeyState)
         setDestinationId(data.destinationId)
+        if (data.conditionId && CONDITIONS.some((condition) => condition.id === data.conditionId)) setSelectedConditionId(data.conditionId)
       }
       if (data.type === 'audit') {
         setAuditLog((current) => current.some((event) => event.id === data.event.id) ? current : [data.event, ...current])
@@ -151,7 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!first) return
     setSelectedConditionId(conditionId)
     setDestinationId(first.id); setJourneyState('en-route')
-    broadcastJourney('en-route', first.id)
+    broadcastJourney('en-route', first.id, conditionId)
     if (options?.source === 'sos-voice') {
       addAlert(`New fictional SOS request: ${condition?.name ?? 'emergency'} · ${facilities?.join(', ') ?? 'capability check required'}`, 'red', 'coordinator')
       addAlert(`Fictional SOS support assigned. ${first.name} is the capability-first destination.`, 'green', 'emergency')
@@ -186,7 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDestinationId(first.id)
     setJourneyState('en-route')
     broadcastHospitalStatus('metro', { icuBeds: 1, cardiacSpecialist: true, erStatus: 'accepting' })
-    broadcastJourney('en-route', first.id)
+    broadcastJourney('en-route', first.id, scenario.id)
     addAudit('Critical cardiac scenario started — fictional data only', 'red')
     addAudit(`${first.name} initially selected after capability and simulated ETA checks`, 'green')
     addAudit('Simulated ambulance journey started; human reroute approval remains required', 'amber')
@@ -251,13 +252,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
   const signIn = async (email: string, password: string): Promise<AuthResult> => {
     if (!supabase) return { error: 'Connect Supabase in .env.local to use account sign-in.' }
-    setAuthBusy(true); const { error } = await supabase.auth.signInWithPassword({ email, password }); setAuthBusy(false)
-    return { error: error?.message ?? null }
+    setAuthBusy(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      return { error: error?.message ?? null }
+    } catch {
+      return { error: 'Account service is unreachable. Check the Supabase project URL and internet connection, or continue in the fictional training workspace.' }
+    } finally {
+      setAuthBusy(false)
+    }
   }
   const signUp = async (email: string, password: string, selectedRole: Exclude<Role, null>): Promise<AuthResult> => {
     if (!supabase) return { error: 'Connect Supabase in .env.local to create an account.' }
-    setAuthBusy(true); const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { role: selectedRole === 'coordinator' ? 'hospital_coordinator' : 'emergency_user', display_name: 'Simulation user' } } }); setAuthBusy(false)
-    return { error: error?.message ?? null, message: data.session ? 'Account created.' : 'Account created. Check your email to confirm it.' }
+    setAuthBusy(true)
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { role: selectedRole === 'coordinator' ? 'hospital_coordinator' : 'emergency_user', display_name: 'Training user' } } })
+      return { error: error?.message ?? null, message: data.session ? 'Account created.' : 'Account created. Check your email to confirm it.' }
+    } catch {
+      return { error: 'Account service is unreachable. Check the Supabase project URL and internet connection, or continue in the fictional training workspace.' }
+    } finally {
+      setAuthBusy(false)
+    }
   }
   const signOut = async () => { if (supabase) await supabase.auth.signOut(); setAuthUser(null); setRole(null); setActiveIncidentId(null) }
 

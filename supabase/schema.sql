@@ -86,6 +86,11 @@ begin
     coalesce(new.raw_user_meta_data ->> 'display_name', 'Simulation user'),
     case when new.raw_user_meta_data ->> 'role' = 'hospital_coordinator' then 'hospital_coordinator' else 'emergency_user' end
   );
+  if new.raw_user_meta_data ->> 'role' = 'hospital_coordinator' then
+    insert into public.hospital_members (user_id, hospital_id)
+    values (new.id, 'metro')
+    on conflict (user_id, hospital_id) do nothing;
+  end if;
   return new;
 end;
 $$;
@@ -98,6 +103,12 @@ insert into public.hospitals (id, name, eta_minutes, icu_beds, cardiac_specialis
   ('metro', 'Metro Care Centre', 11, 1, true, 'accepting', 30.7262, 76.7888, array['Cardiac ICU','Cardiologist','Defibrillator','Cath Lab','Emergency Medicine','ICU','CT Scanner']),
   ('riverbend', 'Riverbend Hospital', 15, 2, true, 'accepting', 30.7462, 76.7985, array['Cardiac ICU','Cardiologist','Defibrillator','Cath Lab','Emergency Medicine','ICU','CT Scanner','Trauma Bay','Blood Bank','General Surgery','Orthopedics','X-Ray','Ventilator','Oxygen Supply','Neurology','Stroke Unit'])
 on conflict (id) do update set name = excluded.name, eta_minutes = excluded.eta_minutes, icu_beds = excluded.icu_beds, cardiac_specialist = excluded.cardiac_specialist, er_status = excluded.er_status, facilities = excluded.facilities, updated_at = now();
+
+-- Give any existing fictional coordinator profiles the same single fictional
+-- hospital assignment used for new sign-ups. This maintains the RLS scope.
+insert into public.hospital_members (user_id, hospital_id)
+select id, 'metro' from public.profiles where role = 'hospital_coordinator'
+on conflict (user_id, hospital_id) do nothing;
 
 -- Enable the simple Postgres Changes simulation stream. RLS still controls rows each client can receive.
 do $$ begin alter publication supabase_realtime add table public.hospitals; exception when duplicate_object then null; end $$;

@@ -20,23 +20,24 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [sosVoiceOpen, setSosVoiceOpen] = useState(false)
+  useEffect(() => { setActiveTab('dashboard') }, [role])
   const openSosVoiceCapture = () => {
     setSosVoiceOpen(true)
     window.dispatchEvent(new Event('pulsegrid:start-sos-voice'))
   }
   if (!role) return <Suspense fallback={<AppLoader />}><LoginScreen /></Suspense>
   return <>
-    <Helmet><title>{role === 'emergency' ? 'Emergency dashboard — PULSEGRID' : 'Hospital coordinator — PULSEGRID'}</title><meta name="description" content="PULSEGRID is a fictional emergency dispatch decision-support simulation." /><meta name="theme-color" content="#2563EB" /><link rel="canonical" href="https://pulsegrid-theta.vercel.app" /></Helmet>
-    <div className="sim-banner">PULSEGRID <span>·</span> Simulation</div>
+    <Helmet><title>{role === 'emergency' ? 'Emergency workspace — PULSEGRID' : 'Hospital workspace — PULSEGRID'}</title><meta name="description" content="PULSEGRID is a fictional emergency dispatch decision-support training workspace." /><meta name="theme-color" content="#2563EB" /><link rel="canonical" href="https://pulsegrid-theta.vercel.app" /></Helmet>
+    <div className="sim-banner">PULSEGRID <span>·</span> Fictional training workspace</div>
     <OfflineBanner />
     <Navbar onRequestSignOut={() => setSignOutOpen(true)} />
     <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
     <motion.main className={`main-layout workspace-main view-${activeTab}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18, ease: 'easeOut' }}>
-      <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard activeTab={activeTab} /> : <CoordinatorDashboard activeTab={activeTab} />}</Suspense>
+      <Suspense fallback={<AppLoader />}>{role === 'emergency' ? <EmergencyDashboard activeTab={activeTab} onNavigate={setActiveTab} /> : <CoordinatorDashboard activeTab={activeTab} />}</Suspense>
     </motion.main>
     {role === 'emergency' && <>
       <SOSButton onActivate={openSosVoiceCapture} />
-      <SOSVoiceDrawer open={sosVoiceOpen} onClose={() => setSosVoiceOpen(false)} onAllocate={(conditionId) => dispatch({ helper: true, conditionId, source: 'sos-voice' })} />
+      <SOSVoiceDrawer open={sosVoiceOpen} onClose={() => setSosVoiceOpen(false)} onAllocate={(conditionId) => { dispatch({ helper: true, conditionId, source: 'sos-voice' }); setActiveTab('dispatch') }} />
     </>}
     {signOutOpen && <ConfirmModal variant="signout" onClose={() => setSignOutOpen(false)} onConfirm={() => { void signOut(); setSignOutOpen(false) }} />}
   </>
@@ -46,7 +47,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   useEffect(() => { const timer = window.setTimeout(() => setLoading(false), 1200); return () => window.clearTimeout(timer) }, [])
   return <HelmetProvider>
-    <Helmet><title>PULSEGRID — Emergency Dispatch Intelligence</title><meta name="description" content="Fictional emergency dispatch decision-support simulation." /><meta property="og:title" content="PULSEGRID" /><meta property="og:type" content="website" /></Helmet>
+    <Helmet><title>PULSEGRID — Emergency Dispatch Intelligence</title><meta name="description" content="Fictional emergency dispatch decision-support training workspace." /><meta property="og:title" content="PULSEGRID" /><meta property="og:type" content="website" /></Helmet>
     {loading ? <AppLoader /> : window.location.pathname !== '/' ? <Suspense fallback={<AppLoader />}><NotFound /></Suspense> : <AppProvider><AppContent /></AppProvider>}
     <Toaster position="top-right" toastOptions={{ style: { background: '#FFFFFF', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 16px rgba(15,23,42,0.12)', fontSize: '14px', fontWeight: '500', padding: '14px 16px' } }} />
   </HelmetProvider>

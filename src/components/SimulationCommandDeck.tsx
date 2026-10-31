@@ -6,8 +6,8 @@ type SimulationCommandDeckProps = {
 }
 
 const journeyLabel = {
-  idle: 'Scenario ready',
-  'en-route': 'Simulated journey active',
+  idle: 'Workspace ready',
+  'en-route': 'Journey active',
   'reroute-required': 'Approval required',
   rerouted: 'Destination updated',
 } as const
@@ -16,12 +16,12 @@ export function SimulationCommandDeck({ onOpenAssist }: SimulationCommandDeckPro
   const { assessments, journeyState, startCriticalScenario } = useApp()
   const eligibleHospitals = assessments.filter((hospital) => hospital.eligible).length
 
-  return <section className="simulation-command-deck" aria-label="PULSEGRID simulation command center">
+  return <section className="simulation-command-deck" aria-label="PULSEGRID command center">
     <div className="command-deck-heading">
       <div>
-        <p className="command-kicker"><span /> PULSEGRID simulation command</p>
-        <h1>Capability-aware dispatch rehearsal</h1>
-        <p>Explore the decision flow with fictional hospitals, fictional units, and a human approval step.</p>
+        <p className="command-kicker"><span /> PULSEGRID operations command</p>
+        <h1>Capability-aware dispatch workflow</h1>
+        <p>Explore the fictional decision flow with fictional hospitals, fictional units, and a human approval step.</p>
       </div>
       <span className="simulation-status"><ShieldCheck size={15} /> Fictional data only</span>
     </div>
@@ -33,8 +33,8 @@ export function SimulationCommandDeck({ onOpenAssist }: SimulationCommandDeckPro
     </div>
 
     <div className="command-actions">
-      <button className="command-primary" onClick={startCriticalScenario}><Play size={16} /> Start cardiac reroute simulation</button>
-      <button className="command-secondary" onClick={onOpenAssist}><Bot size={16} /> Describe symptoms</button>
+      <button className="command-primary" onClick={startCriticalScenario}><Play size={16} /> Start cardiac reroute scenario</button>
+      <button className="command-secondary" onClick={onOpenAssist}><Bot size={16} /> Use AI triage</button>
     </div>
   </section>
 }
